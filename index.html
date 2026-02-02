@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Tea - Organic Tea Collection</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loader -->
+    <div class="loader">
+        <div class="tea-cup">
+            <div class="steam"></div>
+            <div class="steam"></div>
+            <div class="steam"></div>
+        </div>
+        <p class="loader-text">Brewing Excellence...</p>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z" fill="white" stroke="white" stroke-width="2"/>
+        </svg>
+    </div>
+    <div class="cursor-circle"></div>
+
+    <!-- Floating Tea Leaves -->
+    <div class="floating-leaves">
+        <span class="leaf">🍃</span>
+        <span class="leaf">🍃</span>
+        <span class="leaf">🍃</span>
+        <span class="leaf">🍃</span>
+        <span class="leaf">🍃</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">
+                    <span>🍃</span>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-main">Premium Tea</span>
+                    <span class="logo-sub">Since 1999</span>
+                </div>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#story" class="nav-link">Our Story</a></li>
+                <li><a href="#collection" class="nav-link">Collection</a></li>
+                <li><a href="#experience" class="nav-link">Experience</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="search-btn">🔍</button>
+                <button class="cart-btn">
+                    <span class="cart-icon">🛒</span>
+                    <span class="cart-count">0</span>
+                </button>
+            </div>
+            <div class="mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-bg-slider">
+            <div class="hero-slide active">
+                <img src="asset/aautea-images/9.png" alt="Tea Plantation">
+            </div>
+            <div class="hero-slide">
+                <img src="asset/aautea-images/2.png" alt="Tea Garden">
+            </div>
+            <div class="hero-slide">
+                <img src="asset/aautea-images/4.png" alt="Tea Leaves">
+            </div>
+            <div class="hero-gradient-overlay"></div>
+        </div>
+        
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-shine"></span>
+                <span>EST. 1999 • ORGANIC • PREMIUM</span>
+            </div>
+            <div class="hero-text">
+                <h1 class="hero-title">
+                    <span class="title-word">Elevate</span>
+                    <span class="title-word">Your</span>
+                    <span class="title-word highlight">Tea Experience</span>
+                </h1>
+                <p class="hero-subtitle">Discover the art of premium organic tea, handcrafted from the world's finest gardens</p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="stat-num">100+</span>
+                        <span class="stat-label">Tea Varieties</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="stat-num">25+</span>
+                        <span class="stat-label">Years Legacy</span>
+                    </div>
+                    <div class="hero-stat">
+                        <span class="stat-num">15K+</span>
+                        <span class="stat-label">Happy Customers</span>
+                    </div>
+                </div>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary">
+                        <span>Explore Collection</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <button class="btn btn-secondary">
+                        <span>Watch Story</span>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M6.66675 5L13.3334 10L6.66675 15V5Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-slider-controls">
+            <button class="slider-dot active" data-slide="0"></button>
+            <button class="slider-dot" data-slide="1"></button>
+            <button class="slider-dot" data-slide="2"></button>
+        </div>
+        
+        <div class="scroll-indicator">
+            <span class="scroll-text">Scroll to Explore</span>
+            <div class="scroll-mouse">
+                <div class="scroll-wheel"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Story Section -->
+    <section id="story" class="story-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Our Journey</span>
+                <h2 class="section-title">From Garden to Cup</h2>
+            </div>
+            <div class="story-grid">
+                <div class="story-card">
+                    <div class="story-image">
+                        <img data-src="https://images.unsplash.com/photo-1563789031959-4c02bcb41319?w=800" alt="Tea Harvesting" class="lazy-img">
+                        <div class="story-overlay">
+                            <span class="story-number">01</span>
+                        </div>
+                    </div>
+                    <div class="story-content">
+                        <h3>Handpicked Excellence</h3>
+                        <p>Our skilled artisans carefully select only the finest tea leaves at dawn, ensuring peak freshness and flavor.</p>
+                    </div>
+                </div>
+                <div class="story-card">
+                    <div class="story-image">
+                        <img data-src="https://images.unsplash.com/photo-1557750255-c76072a7aad1?w=800" alt="Tea Processing" class="lazy-img">
+                        <div class="story-overlay">
+                            <span class="story-number">02</span>
+                        </div>
+                    </div>
+                    <div class="story-content">
+                        <h3>Traditional Craftsmanship</h3>
+                        <p>Using time-honored techniques passed down through generations, we preserve the authentic character of each blend.</p>
+                    </div>
+                </div>
+                <div class="story-card">
+                    <div class="story-image">
+                        <img data-src="https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800" alt="Tea Tasting" class="lazy-img">
+                        <div class="story-overlay">
+                            <span class="story-number">03</span>
+                        </div>
+                    </div>
+                    <div class="story-content">
+                        <h3>Pure Perfection</h3>
+                        <p>Each batch is meticulously tested to ensure it meets our exacting standards of quality and taste.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Parallax Section -->
+    <section class="parallax-section">
+        <div class="parallax-bg" data-speed="0.5">
+            <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=1920" alt="Tea Landscape">
+        </div>
+        <div class="parallax-content">
+            <h2 class="parallax-title">Sustainable & Organic</h2>
+            <p class="parallax-text">We believe in nurturing the earth that nurtures us. Our commitment to organic farming ensures every sip is guilt-free.</p>
+        </div>
+    </section>
+
+    <!-- Collection Section -->
+    <section id="collection" class="collection-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Our Collection</span>
+                <h2 class="section-title">Premium Tea Selection</h2>
+            </div>
+            <div class="collection-grid">
+                <div class="product-card">
+                    <div class="product-image-wrapper">
+                        <img data-src="https://images.unsplash.com/photo-1597318130538-3b8f46bbd0d7?w=600" alt="Green Tea" class="lazy-img product-img">
+                        <div class="product-badge">Best Seller</div>
+                        <div class="product-overlay">
+                            <button class="btn-quick-view">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">Emerald Garden Green Tea</h3>
+                        <p class="product-description">Delicate and refreshing with notes of fresh grass</p>
+                        <div class="product-footer">
+                            <span class="product-price">$24.99</span>
+                            <button class="btn-add-cart">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-wrapper">
+                        <img data-src="https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=600" alt="Black Tea" class="lazy-img product-img">
+                        <div class="product-badge">New</div>
+                        <div class="product-overlay">
+                            <button class="btn-quick-view">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">Golden Sunrise Black Tea</h3>
+                        <p class="product-description">Bold and aromatic with caramel undertones</p>
+                        <div class="product-footer">
+                            <span class="product-price">$22.99</span>
+                            <button class="btn-add-cart">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-wrapper">
+                        <img data-src="https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600" alt="Herbal Tea" class="lazy-img product-img">
+                        <div class="product-overlay">
+                            <button class="btn-quick-view">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">Moonlight Chamomile</h3>
+                        <p class="product-description">Soothing herbal blend for peaceful evenings</p>
+                        <div class="product-footer">
+                            <span class="product-price">$19.99</span>
+                            <button class="btn-add-cart">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="product-card">
+                    <div class="product-image-wrapper">
+                        <img data-src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600" alt="White Tea" class="lazy-img product-img">
+                        <div class="product-overlay">
+                            <button class="btn-quick-view">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">Silver Needle White Tea</h3>
+                        <p class="product-description">Rare and exquisite with subtle sweetness</p>
+                        <div class="product-footer">
+                            <span class="product-price">$34.99</span>
+                            <button class="btn-add-cart">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Experience Section with Magical Tea -->
+    <section id="experience" class="experience-section">
+        <div class="container">
+            <div class="experience-content">
+                <div class="experience-left">
+                    <div class="section-header">
+                        <span class="section-tag">The Experience</span>
+                        <h2 class="section-title">A Magical Journey in Every Cup</h2>
+                    </div>
+                    <p class="experience-text">Immerse yourself in the enchanting world of premium tea. Each blend tells a story, each sip reveals a secret. Experience the transformation of simple leaves into liquid gold.</p>
+                    <ul class="experience-features">
+                        <li>
+                            <span class="feature-icon">✨</span>
+                            <div>
+                                <h4>Premium Quality</h4>
+                                <p>Sourced from the world's finest tea estates</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🌿</span>
+                            <div>
+                                <h4>100% Organic</h4>
+                                <p>No pesticides, just pure natural goodness</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="feature-icon">🎁</span>
+                            <div>
+                                <h4>Beautifully Packaged</h4>
+                                <p>Perfect for gifting or personal indulgence</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="experience-right">
+                    <div class="magical-tea-wrapper">
+                        <img data-src="https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=800" alt="Magical Tea" class="lazy-img magical-tea-img">
+                        <div class="floating-particles"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Counter Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number" data-count="15000">0</span>
+                    <span class="stat-label">Happy Customers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" data-count="50">0</span>
+                    <span class="stat-label">Tea Varieties</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" data-count="25">0</span>
+                    <span class="stat-label">Years Experience</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" data-count="100">0</span>
+                    <span class="stat-label">% Organic</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials-section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Testimonials</span>
+                <h2 class="section-title">What Our Customers Say</h2>
+            </div>
+            <div class="testimonials-slider">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"The quality is exceptional! Every cup is like a journey to the tea gardens. The aroma alone is worth it."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SJ</div>
+                        <div class="author-info">
+                            <h4>Sarah Johnson</h4>
+                            <span>Tea Enthusiast</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"I've tried many brands, but Premium Tea stands out. The freshness and flavor are unmatched. Highly recommended!"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MC</div>
+                        <div class="author-info">
+                            <h4>Michael Chen</h4>
+                            <span>Coffee Convert</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <p class="testimonial-text">"Absolutely love the organic collection! It's my daily ritual now. The packaging is beautiful too."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">EP</div>
+                        <div class="author-info">
+                            <h4>Emma Patterson</h4>
+                            <span>Wellness Coach</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2 class="newsletter-title">Join Our Tea Community</h2>
+                <p class="newsletter-text">Subscribe to receive exclusive offers, tea tips, and new arrivals</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Enter your email" class="newsletter-input" required>
+                    <button type="submit" class="btn btn-primary">Subscribe</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <span class="leaf-icon">🍃</span>
+                        <span>Premium Tea</span>
+                    </div>
+                    <p class="footer-description">Bringing you the finest organic teas from around the world since 1999.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link">📘</a>
+                        <a href="#" class="social-link">📷</a>
+                        <a href="#" class="social-link">🐦</a>
+                        <a href="#" class="social-link">📌</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3 class="footer-title">Shop</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">All Products</a></li>
+                        <li><a href="#">Green Tea</a></li>
+                        <li><a href="#">Black Tea</a></li>
+                        <li><a href="#">Herbal Tea</a></li>
+                        <li><a href="#">Gift Sets</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3 class="footer-title">Company</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Our Story</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3 class="footer-title">Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Shipping</a></li>
+                        <li><a href="#">Returns</a></li>
+                        <li><a href="#">Track Order</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Premium Tea. All rights reserved. Crafted with 💚</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- GSAP Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

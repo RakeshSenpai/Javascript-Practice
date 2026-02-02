@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile OS Portfolio</title>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --phone-width: 360px;
+            --phone-height: 740px;
+            --bezel-color: #1a1a1a;
+            --screen-bg: #f2f2f7;
+            --accent-color: #007aff;
+            --text-color: #000;
+            --app-icon-size: 60px;
+            --transition-speed: 0.4s;
+            --lock-screen-height: 100%;
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --screen-bg: #000;
+                --text-color: #fff;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e0e5ec;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* --- The Phone Device --- */
+        .phone-case {
+            width: var(--phone-width);
+            height: var(--phone-height);
+            background: var(--bezel-color);
+            border-radius: 45px;
+            padding: 12px;
+            box-shadow: 
+                0 0 0 2px #333,
+                0 20px 50px rgba(0,0,0,0.4);
+            position: relative;
+            z-index: 10;
+        }
+
+        .notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 30px;
+            background: #000;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .speaker {
+            width: 60px;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            margin-top: 5px;
+        }
+
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border-radius: 35px;
+            overflow: hidden;
+            position: relative;
+            color: white;
+        }
+
+        /* --- Status Bar --- */
+        .status-bar {
+            position: absolute;
+            top: 5px;
+            width: 100%;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 90;
+            color: white;
+            pointer-events: none;
+        }
+
+        /* --- Bottom Bar --- */
+        .home-bar-area {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 20px;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .home-bar {
+            width: 120px;
+            height: 5px;
+            background: white;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            transition: width 0.2s;
+        }
+
+        .home-bar-area:hover .home-bar {
+            width: 140px;
+        }
+
+        /* --- Lock Screen --- */
+        .lock-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://picsum.photos/seed/wallpaper/400/800') no-repeat center center/cover;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 100px;
+            transition: transform var(--transition-speed) cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+        }
+
+        .lock-time {
+            font-size: 80px;
+            font-weight: 200;
+            margin: 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .lock-date {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 5px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .swipe-hint {
+            position: absolute;
+            bottom: 30px;
+            font-size: 14px;
+            opacity: 0.8;
+            animation: bounce 2s infinite;
+        }
+
+        .swipe-hint i {
+            display: block;
+            margin-top: 5px;
+            font-size: 20px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+
+        /* --- Home Screen --- */
+        .home-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://picsum.photos/seed/wallpaper_blur/400/800') no-repeat center center/cover;
+            background-blend-mode: overlay;
+            background-color: rgba(0,0,0,0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 40;
+            padding-top: 60px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .home-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px 10px;
+            padding: 10px 20px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .app-item:active {
+            transform: scale(0.9);
+        }
+
+        .app-icon {
+            width: var(--app-icon-size);
+            height: var(--app-icon-size);
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            margin-bottom: 5px;
+        }
+
+        .app-name {
+            font-size: 11px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        /* App Colors */
+        .icon-about { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+        .icon-projects { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+        .icon-resume { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); }
+        .icon-contact { background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); }
+        .icon-settings { background: linear-gradient(135deg, #434343 0%, #000000 100%); }
+
+        /* --- App Window (Modal) --- */
+        .app-window {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--screen-bg);
+            color: var(--text-color);
+            z-index: 60;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            overflow-y: auto;
+            padding-bottom: 30px;
+            /* Padding top removed because we have a header bar now */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-window.active {
+            transform: translateY(0);
+        }
+
+        .app-window::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        /* --- NEW: App Navigation Bar (Header) --- */
+        .app-nav-bar {
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-top: 10px; /* Space for status bar */
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .app-nav-bar {
+                background: rgba(28, 28, 30, 0.95);
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            position: absolute;
+            left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px;
+            margin-left: -5px; /* Increase tap area */
+            outline: none;
+        }
+        
+        .back-btn:hover {
+            opacity: 0.7;
+        }
+
+        .app-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        /* --- Content Area --- */
+        .content-area {
+            padding: 20px;
+            padding-top: 10px;
+        }
+
+        /* About App */
+        .profile-card {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 3px solid rgba(0,0,0,0.1);
+        }
+
+        /* Projects App */
+        .project-card {
+            background: rgba(255,255,255,0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .project-card:hover {
+            transform: translateY(-2px);
+        }
+        .project-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .project-info {
+            padding: 15px;
+        }
+        .project-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .project-desc {
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Resume App */
+        .resume-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        .resume-item::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 25px;
+            bottom: -25px;
+            width: 2px;
+            background: #ddd;
+        }
+        .resume-item:last-child::before {
+            display: none;
+        }
+        .resume-dot {
+            width: 14px;
+            height: 14px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 5px;
+            border: 2px solid var(--screen-bg);
+        }
+        .resume-content h4 {
+            margin: 0 0 5px 0;
+        }
+        .resume-content p {
+            margin: 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Contact App */
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.5);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .input-group input:focus, .input-group textarea:focus {
+            border-color: var(--accent-color);
+        }
+        .send-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: max-content;
+            color: #000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Dark Mode App Specifics */
+        @media (prefers-color-scheme: dark) {
+            .project-card {
+                background: #1c1c1e;
+            }
+            .input-group input, .input-group textarea {
+                background: #1c1c1e;
+                border-color: #333;
+                color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-case">
+        <div class="notch">
+            <div class="speaker"></div>
+        </div>
+
+        <div class="screen">
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <span id="status-time">9:41</span>
+                <div style="display: flex; gap: 5px;">
+                    <i class="fas fa-signal"></i>
+                    <i class="fas fa-wifi"></i>
+                    <i class="fas fa-battery-full"></i>
+                </div>
+            </div>
+
+            <!-- Lock Screen -->
+            <div class="lock-screen" id="lockScreen">
+                <h1 class="lock-time" id="lockClock">09:41</h1>
+                <p class="lock-date" id="lockDate">Monday, January 1</p>
+                <div class="swipe-hint">
+                    Swipe up to unlock
+                    <i class="fas fa-chevron-up"></i>
+                </div>
+            </div>
+
+            <!-- Home Screen -->
+            <div class="home-screen" id="homeScreen">
+                <div class="app-grid">
+                    <!-- About Me -->
+                    <div class="app-item" onclick="openApp('about')">
+                        <div class="app-icon icon-about">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="app-name">About</span>
+                    </div>
+
+                    <!-- Projects -->
+                    <div class="app-item" onclick="openApp('projects')">
+                        <div class="app-icon icon-projects">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <span class="app-name">Projects</span>
+                    </div>
+
+                    <!-- Resume -->
+                    <div class="app-item" onclick="openApp('resume')">
+                        <div class="app-icon icon-resume">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <span class="app-name">Resume</span>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="app-item" onclick="openApp('contact')">
+                        <div class="app-icon icon-contact">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <span class="app-name">Contact</span>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="app-item" onclick="openApp('settings')">
+                        <div class="app-icon icon-settings">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <span class="app-name">Settings</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- App Windows -->
+            
+            <!-- About App -->
+            <div class="app-window" id="app-about">
+                <div class="app-nav-bar">
+                    <button class="back-btn" onclick="closeApp()">
+                        <i class="fas fa-chevron-left"></i> Back
+                    </button>
+                    <div class="app-title">About Me</div>
+                </div>
+                <div class="content-area">
+                    <div class="profile-card">
+                        <img src="https://picsum.photos/seed/avatar1/200/200" alt="Profile" class="profile-img">
+                        <h2>Alex Developer</h2>
+                        <p style="color: #666;">Creative Frontend Engineer</p>
+                        <br>
+                        <p>I build interactive web experiences that live on the internet. My passion is turning complex problems into simple, beautiful, and intuitive designs.</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-around; font-size: 24px; color: var(--accent-color);">
+                        <i class="fab fa-github"></i>
+                        <i class="fab fa-linkedin"></i>
+                        <i class="fab fa-twitter"></i>
+                        <i class="fab fa-instagram"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects App -->
+            <div class="app-window" id="app-projects">
+                <div class="app-nav-bar">
+                    <button class="back-btn" onclick="closeApp()">
+                        <i class="fas fa-chevron-left"></i> Back
+                    </button>
+                    <div class="app-title">Projects</div>
+                </div>
+                <div class="content-area">
+                    <div class="project-card" onclick="showToast('Opening Project...')">
+                        <img src="https://picsum.photos/seed/p1/400/200" class="project-img" alt="Project 1">
+                        <div class="project-info">
+                            <div class="project-title">E-Commerce Dashboard</div>
+                            <div class="project-desc">A React-based analytics dashboard for online stores.</div>
+                        </div>
+                    </div>
+                    <div class="project-card" onclick="showToast('Opening Project...')">
+                        <img src="https://picsum.photos/seed/p2/400/200" class="project-img" alt="Project 2">
+                        <div class="project-info">
+                            <div class="project-title">Travel Social App</div>
+                            <div class="project-desc">iOS and Android app for sharing travel itineraries.</div>
+                        </div>
+                    </div>
+                    <div class="project-card" onclick="showToast('Opening Project...')">
+                        <img src="https://picsum.photos/seed/p3/400/200" class="project-img" alt="Project 3">
+                        <div class="project-info">
+                            <div class="project-title">AI Image Generator</div>
+                            <div class="project-desc">Web interface using Stable Diffusion API.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resume App -->
+            <div class="app-window" id="app-resume">
+                <div class="app-nav-bar">
+                    <button class="back-btn" onclick="closeApp()">
+                        <i class="fas fa-chevron-left"></i> Back
+                    </button>
+                    <div class="app-title">Resume</div>
+                </div>
+                <div class="content-area">
+                    <div class="resume-item">
+                        <div class="resume-dot"></div>
+                        <div class="resume-content">
+                            <h4>Senior Frontend Dev</h4>
+                            <p>TechCorp Inc. • 2021 - Present</p>
+                            <p style="margin-top: 5px; font-size: 12px;">Leading a team of 5 developers building SPAs.</p>
+                        </div>
+                    </div>
+                    <div class="resume-item">
+                        <div class="resume-dot"></div>
+                        <div class="resume-content">
+                            <h4>Web Developer</h4>
+                            <p>Creative Studio • 2018 - 2021</p>
+                            <p style="margin-top: 5px; font-size: 12px;">Developed award-winning marketing sites.</p>
+                        </div>
+                    </div>
+                    <div class="resume-item">
+                        <div class="resume-dot"></div>
+                        <div class="resume-content">
+                            <h4>Bachelor of CS</h4>
+                            <p>University of Tech • 2014 - 2018</p>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Downloading PDF...')" style="margin-top: 20px; width: 100%; padding: 12px; background: #eee; border:none; border-radius: 8px; font-weight:600;">Download PDF</button>
+                </div>
+            </div>
+
+            <!-- Contact App -->
+            <div class="app-window" id="app-contact">
+                <div class="app-nav-bar">
+                    <button class="back-btn" onclick="closeApp()">
+                        <i class="fas fa-chevron-left"></i> Back
+                    </button>
+                    <div class="app-title">Contact</div>
+                </div>
+                <div class="content-area">
+                    <form class="contact-form" onsubmit="event.preventDefault(); showToast('Message Sent!'); closeApp();">
+                        <div class="input-group">
+                            <input type="text" placeholder="Your Name" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="email" placeholder="Email Address" required>
+                        </div>
+                        <div class="input-group">
+                            <textarea rows="4" placeholder="Message" required></textarea>
+                        </div>
+                        <button type="submit" class="send-btn">Send Message</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Settings App -->
+            <div class="app-window" id="app-settings">
+                <div class="app-nav-bar">
+                    <button class="back-btn" onclick="closeApp()">
+                        <i class="fas fa-chevron-left"></i> Back
+                    </button>
+                    <div class="app-title">Settings</div>
+                </div>
+                <div class="content-area">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee;">
+                        <span>Airplane Mode</span>
+                        <i class="fas fa-toggle-off" style="color: #ccc; font-size: 24px;"></i>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee;">
+                        <span>Wi-Fi</span>
+                        <span style="color: #007aff;">Not Connected</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0;">
+                        <span>Dark Mode</span>
+                        <span>System</span>
+                    </div>
+                    <br>
+                    <p style="font-size: 12px; color: #999;">Software Version 1.0.0</p>
+                </div>
+            </div>
+
+            <!-- Home Bar -->
+            <div class="home-bar-area" id="homeBar">
+                <div class="home-bar"></div>
+            </div>
+
+            <!-- Toast -->
+            <div class="toast" id="toast">
+                <i class="fas fa-info-circle" style="color: var(--accent-color)"></i>
+                <span id="toast-msg">Notification</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Clock Logic ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('status-time').textContent = `${hours}:${minutes}`;
+            document.getElementById('lockClock').textContent = `${hours}:${minutes}`;
+            
+            const options = { weekday: 'long', month: 'long', day: 'numeric' };
+            document.getElementById('lockDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 2. Unlock Logic ---
+        const lockScreen = document.getElementById('lockScreen');
+        const homeScreen = document.getElementById('homeScreen');
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+        let isUnlocked = false;
+
+        // Touch
+        lockScreen.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+        });
+
+        lockScreen.addEventListener('touchmove', (e) => {
+            if (!isDragging || isUnlocked) return;
+            currentY = e.touches[0].clientY - startY;
+            if (currentY < 0) {
+                lockScreen.style.transform = `translateY(${currentY}px)`;
+                lockScreen.style.opacity = 1 - (Math.abs(currentY) / 400);
+            }
+        });
+
+        lockScreen.addEventListener('touchend', () => {
+            if (!isDragging || isUnlocked) return;
+            isDragging = false;
+            if (currentY < -150) {
+                unlockPhone();
+            } else {
+                lockScreen.style.transform = 'translateY(0)';
+                lockScreen.style.opacity = 1;
+            }
+            currentY = 0;
+        });
+
+        // Mouse
+        lockScreen.addEventListener('mousedown', (e) => {
+            startY = e.clientY;
+            isDragging = true;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || isUnlocked) return;
+            currentY = e.clientY - startY;
+            if (currentY < 0) {
+                lockScreen.style.transform = `translateY(${currentY}px)`;
+                lockScreen.style.opacity = 1 - (Math.abs(currentY) / 400);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!isDragging || isUnlocked) return;
+            isDragging = false;
+            if (currentY < -150) {
+                unlockPhone();
+            } else {
+                lockScreen.style.transform = 'translateY(0)';
+                lockScreen.style.opacity = 1;
+            }
+            currentY = 0;
+        });
+
+        function unlockPhone() {
+            isUnlocked = true;
+            lockScreen.style.transform = 'translateY(-100%)';
+            lockScreen.style.opacity = 0;
+            setTimeout(() => {
+                homeScreen.classList.add('visible');
+            }, 200);
+        }
+
+        // --- 3. App Logic ---
+        const apps = document.querySelectorAll('.app-window');
+        let currentAppId = null;
+
+        function openApp(appId) {
+            const app = document.getElementById(`app-${appId}`);
+            if (app) {
+                currentAppId = appId;
+                app.classList.add('active');
+            }
+        }
+
+        function closeApp() {
+            if (currentAppId) {
+                const app = document.getElementById(`app-${currentAppId}`);
+                app.classList.remove('active');
+                currentAppId = null;
+            }
+        }
+
+        document.getElementById('homeBar').addEventListener('click', () => {
+            closeApp();
+        });
+
+        // --- 4. Toast ---
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

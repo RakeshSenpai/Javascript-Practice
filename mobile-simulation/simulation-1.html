@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Android OS Simulation</title>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- SYSTEM CSS VARIABLES --- */
+        :root {
+            /* Theme Colors */
+            --sys-bg-primary: #000000;
+            --sys-bg-secondary: #121212;
+            --sys-bg-card: #1e1e1e;
+            --sys-text-primary: #ffffff;
+            --sys-text-secondary: #aaaaaa;
+            --sys-accent: #4285F4;
+            
+            /* Scales */
+            --sys-font-scale: 1;
+            --sys-icon-scale: 1;
+            
+            /* Constants */
+            --nav-height: 48px;
+            --status-bar-height: 24px;
+            --base-app-icon-size: 56px;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* --- PHONE FRAME --- */
+        #phone-frame {
+            width: 100%; height: 100%; max-width: 400px; max-height: 850px;
+            background-color: var(--sys-bg-primary);
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-size: calc(16px * var(--sys-font-scale));
+        }
+
+        /* --- STATUS BAR --- */
+        #status-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: var(--status-bar-height);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+            z-index: 100; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 16px; color: var(--sys-text-primary); font-size: 0.75rem; font-weight: 500;
+        }
+        .status-icons { display: flex; gap: 6px; }
+        .status-icon-off { opacity: 0.3; }
+
+        /* --- NOTIFICATION SHADE --- */
+        #notification-shade {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(25, 25, 25, 0.98); backdrop-filter: blur(12px);
+            z-index: 90; transform: translateY(-100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            padding-top: calc(var(--status-bar-height) + 20px);
+            display: flex; flex-direction: column; align-items: center; color: var(--sys-text-primary);
+        }
+        #notification-shade.active { transform: translateY(0); }
+        .quick-toggles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 90%; margin-bottom: 20px; }
+        .toggle-btn {
+            background: rgba(255,255,255,0.1); border-radius: 20px; padding: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .toggle-btn.active { background: var(--sys-accent); }
+        .toggle-btn:active { transform: scale(0.95); }
+        .toggle-btn i { font-size: 1.25rem; margin-bottom: 5px; }
+        .toggle-btn span { font-size: 0.625rem; }
+
+        /* --- LOCK SCREEN --- */
+        #lock-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://picsum.photos/seed/nightsky/400/850');
+            background-size: cover; background-position: center;
+            z-index: 80; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white;
+            transition: transform 0.4s ease-out;
+        }
+        #lock-screen.unlocked { transform: translateY(-100%); }
+        .lock-time { font-size: 4rem; font-weight: 200; margin-bottom: 5px; line-height: 1; }
+        .lock-date { font-size: 1rem; margin-bottom: 6.25rem; }
+        .swipe-hint { position: absolute; bottom: 6.25rem; font-size: 0.75rem; opacity: 0.7; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+
+        /* --- HOME SCREEN --- */
+        #home-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://picsum.photos/seed/abstract/400/850');
+            background-size: cover; background-position: center; z-index: 50;
+            padding-top: calc(var(--status-bar-height) + 40px);
+            padding-bottom: calc(var(--nav-height) + 20px);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; width: 100%; padding: 0 10px; }
+        .app-icon-container { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.1s; }
+        .app-icon-container:active { transform: scale(0.9); }
+        .app-icon {
+            width: calc(var(--base-app-icon-size) * var(--sys-icon-scale));
+            height: calc(var(--base-app-icon-size) * var(--sys-icon-scale));
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: calc(24px * var(--sys-icon-scale)); color: white; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            margin-bottom: 5px; position: relative; transition: width 0.3s, height 0.3s;
+        }
+        .icon-chrome { background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335); }
+        .icon-playstore { background: linear-gradient(135deg, #00C6FF, #0072FF); }
+        .icon-photos { background: linear-gradient(135deg, #FFFFFF, #E0E0E0); color: #333; }
+        .icon-camera { background: linear-gradient(135deg, #333, #000); }
+        .icon-settings { background: #546E7A; }
+        .icon-resume { background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 14px; }
+        .icon-google { background: white; color: transparent; font-weight: bold; }
+        .icon-google::before {
+            content: 'G';
+            background: -webkit-linear-gradient(left, #4285F4, #EA4335, #FBBC05, #4285F4, #34A853, #4285F4);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .app-name { font-size: 0.6875rem; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+
+        /* --- APP OVERLAY --- */
+        #app-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--sys-bg-primary); z-index: 60; transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        #app-overlay.open { transform: translateY(0); }
+        .app-header {
+            height: var(--status-bar-height); background: var(--sys-bg-primary);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--sys-text-primary); 
+            border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10;
+        }
+        .app-content {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            color: var(--sys-text-primary); position: relative; 
+            background: var(--sys-bg-primary); scrollbar-width: none; 
+        }
+        .app-content::-webkit-scrollbar { display: none; }
+
+        /* --- SETTINGS STYLES --- */
+        .settings-container { padding: 20px 0; }
+        .settings-header { font-size: 2rem; font-weight: 300; margin: 0 0 20px 20px; color: var(--sys-text-primary); }
+        .settings-section { margin-bottom: 30px; }
+        .settings-label {
+            padding: 0 24px 8px; font-size: 0.875rem; font-weight: 600; color: var(--sys-accent);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .setting-item {
+            background: var(--sys-bg-card); padding: 16px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s; cursor: pointer;
+        }
+        .setting-item:active { background: rgba(255,255,255,0.05); }
+        .setting-title { font-size: 1rem; color: var(--sys-text-primary); }
+        .setting-desc { font-size: 0.875rem; color: var(--sys-text-secondary); margin-top: 2px; }
+        .toggle-switch {
+            width: 50px; height: 28px; background: #5c5c5c;
+            border-radius: 14px; position: relative; transition: background 0.3s;
+        }
+        .toggle-switch.active { background: var(--sys-accent); }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 24px; height: 24px; background: #fff;
+            border-radius: 50%; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle-switch.active::after { transform: translateX(22px); }
+        .setting-value { font-size: 0.875rem; color: var(--sys-text-secondary); }
+
+        /* --- GOOGLE STYLES --- */
+        .google-container { display: flex; flex-direction: column; align-items: center; padding-top: 40px; height: 100%; background: var(--sys-bg-primary); }
+        .google-logo { font-size: 3.25rem; font-weight: bold; margin-bottom: 30px; letter-spacing: -2px; }
+        .g-blue { color: #4285F4; } .g-red { color: #EA4335; } .g-yellow { color: #FBBC05; } .g-green { color: #34A853; }
+        .search-bar {
+            width: 90%; height: 46px; background: var(--sys-bg-card);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
+            display: flex; align-items: center; padding: 0 15px; box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+        }
+        .search-text { flex: 1; font-size: 1rem; color: var(--sys-text-primary); outline: none; border: none; background: transparent;}
+        .search-results { width: 100%; padding: 20px; display: none; }
+        .search-results.active { display: block; }
+        .result-stats { font-size: 0.875rem; color: var(--sys-text-secondary); margin-bottom: 20px; }
+        .result-card { margin-bottom: 30px; animation: fadeIn 0.5s ease; }
+        .result-url { font-size: 0.75rem; color: var(--sys-text-primary); margin-bottom: 4px; display: flex; align-items: center; }
+        .result-icon { width: 16px; height: 16px; border-radius: 50%; background: #eee; margin-right: 8px; font-size: 10px; display: flex; justify-content: center; align-items: center; color: #555;}
+        .result-title { font-size: 1.25rem; color: var(--sys-accent); display: block; margin-bottom: 4px; font-weight: 400; }
+        .result-desc { font-size: 0.875rem; color: var(--sys-text-secondary); line-height: 1.58; }
+
+        /* --- RESUME STYLES (RESTORED & AWESOME) --- */
+        .resume-container {
+            font-family: 'Inter', sans-serif; background: var(--sys-bg-primary); color: var(--sys-text-primary);
+            min-height: 100%; padding-bottom: 40px;
+        }
+
+        /* Header */
+        .resume-header {
+            position: relative; padding: 60px 30px 40px; text-align: center;
+            background: linear-gradient(to bottom, var(--sys-bg-secondary), var(--sys-bg-primary));
+        }
+        .resume-avatar {
+            width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
+            border: 4px solid var(--sys-bg-card); box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            margin-bottom: 20px; transition: transform 0.3s;
+        }
+        .resume-name { font-size: 2.2rem; font-weight: 800; margin: 0 0 5px 0; line-height: 1.1; }
+        .resume-title { font-size: 1.1rem; color: var(--sys-accent); font-weight: 500; margin-bottom: 20px; }
+        .resume-contact {
+            display: flex; justify-content: center; gap: 20px; margin-top: 15px;
+            font-size: 0.85rem; color: var(--sys-text-secondary);
+        }
+        .resume-contact i { margin-right: 6px; color: var(--sys-text-primary); }
+
+        .resume-download-btn {
+            background: var(--sys-accent); color: white; border: none; padding: 10px 20px;
+            border-radius: 20px; font-size: 0.9rem; font-weight: 600; margin-top: 25px;
+            box-shadow: 0 4px 12px rgba(66,133,244,0.3); cursor: pointer;
+        }
+
+        /* Sections */
+        .resume-section { padding: 30px 25px; }
+        .section-title {
+            font-size: 1.4rem; font-weight: 800; margin-bottom: 25px; color: var(--sys-text-primary);
+            border-left: 4px solid var(--sys-accent); padding-left: 15px;
+        }
+        
+        /* Summary */
+        .resume-summary {
+            font-size: 1rem; line-height: 1.7; color: var(--sys-text-secondary); margin-bottom: 20px;
+        }
+
+        /* Experience */
+        .resume-card {
+            background: var(--sys-bg-card); border-radius: 12px; padding: 20px;
+            margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .job-header { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: flex-start; }
+        .job-role { font-size: 1.1rem; font-weight: 700; color: var(--sys-text-primary); }
+        .job-company { font-size: 0.9rem; color: var(--sys-text-secondary); margin-bottom: 10px; }
+        .job-date {
+            font-size: 0.75rem; background: rgba(255,255,255,0.05); color: var(--sys-text-secondary);
+            padding: 4px 8px; border-radius: 6px; font-weight: 600;
+        }
+        .job-desc {
+            font-size: 0.9rem; color: var(--sys-text-secondary); line-height: 1.6; margin-top: 10px;
+        }
+
+        /* Skills */
+        .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .skill-category h4 { font-size: 0.9rem; margin: 0 0 10px 0; color: var(--sys-text-secondary); }
+        .skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .skill-tag {
+            font-size: 0.75rem; padding: 6px 12px; background: rgba(255,255,255,0.05);
+            border-radius: 8px; color: var(--sys-text-primary); border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Animation Utils */
+        .reveal-up {
+            opacity: 0; transform: translateY(30px); transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .reveal-up.visible { opacity: 1; transform: translateY(0); }
+        .stagger-1 { transition-delay: 0.1s; }
+        .stagger-2 { transition-delay: 0.2s; }
+        .stagger-3 { transition-delay: 0.3s; }
+
+        /* --- PORTFOLIO STYLES (Preserved from previous update) --- */
+        .portfolio-wrapper { font-family: 'Inter', sans-serif; background: var(--sys-bg-primary); color: var(--sys-text-primary); min-height: 100%; position: relative; overflow-x: hidden; }
+        .pf-glow { position: absolute; top: 0; right: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(66,133,244,0.2) 0%, rgba(0,0,0,0) 70%); pointer-events: none; z-index: 0; }
+        .pf-hero { position: relative; padding: 60px 30px 40px; text-align: center; }
+        .pf-avatar-container { position: relative; width: 110px; height: 110px; margin: 0 auto 25px; }
+        .pf-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--sys-bg-primary); box-shadow: 0 0 0 4px var(--sys-accent); }
+        .pf-status-dot { position: absolute; bottom: 10px; right: 10px; width: 18px; height: 18px; background: #34A853; border: 3px solid var(--sys-bg-primary); border-radius: 50%; }
+        .pf-name { font-size: 2.5rem; font-weight: 800; margin: 0 0 10px 0; line-height: 1.1; background: linear-gradient(135deg, var(--sys-text-primary) 0%, var(--sys-text-secondary) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .pf-tagline { font-size: 1.1rem; color: var(--sys-text-secondary); margin-bottom: 30px; font-weight: 300; }
+        .pf-stats { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .pf-stat-item { background: var(--sys-bg-card); padding: 15px 20px; border-radius: 16px; text-align: center; min-width: 90px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .pf-stat-num { font-size: 1.5rem; font-weight: 700; color: var(--sys-accent); display: block; }
+        .pf-stat-label { font-size: 0.75rem; color: var(--sys-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .pf-section { padding: 40px 30px; position: relative; z-index: 1; }
+        .pf-title { font-size: 1.75rem; font-weight: 800; margin: 0 0 25px 0; color: var(--sys-text-primary); position: relative; padding-left: 15px; }
+        .pf-title::before { content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4px; height: 24px; background: var(--sys-accent); border-radius: 2px; }
+        .pf-services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .pf-service-card { background: var(--sys-bg-card); padding: 25px 15px; border-radius: 16px; text-align: center; transition: transform 0.3s; }
+        .pf-service-card:active { transform: translateY(-5px); }
+        .pf-s-icon { font-size: 2rem; margin-bottom: 15px; background: rgba(66,133,244,0.1); width: 60px; height: 60px; line-height: 60px; border-radius: 50%; color: var(--sys-accent); margin-left: auto; margin-right: auto; }
+        .pf-s-title { font-weight: 700; margin-bottom: 5px; font-size: 1rem; }
+        .pf-s-desc { font-size: 0.75rem; color: var(--sys-text-secondary); line-height: 1.4; }
+        .pf-timeline { position: relative; padding-left: 20px; border-left: 2px solid rgba(255,255,255,0.1); }
+        .timeline-item { position: relative; margin-bottom: 30px; padding-left: 20px; }
+        .timeline-dot { width: 14px; height: 14px; background: var(--sys-bg-primary); border: 3px solid var(--sys-accent); border-radius: 50%; position: absolute; left: -8px; top: 5px; }
+        .timeline-date { font-size: 0.75rem; color: var(--sys-accent); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: block; }
+        .timeline-role { font-size: 1.125rem; font-weight: 700; color: var(--sys-text-primary); margin: 0; }
+        .timeline-comp { font-size: 0.9rem; color: var(--sys-text-secondary); margin-bottom: 8px; }
+        .pf-project-card { background: var(--sys-bg-card); border-radius: 20px; overflow: hidden; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); transition: transform 0.3s; }
+        .pf-p-img-wrap { height: 200px; width: 100%; overflow: hidden; position: relative; }
+        .pf-p-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .pf-project-card:active .pf-p-img-wrap img { transform: scale(1.1); }
+        .pf-p-content { padding: 25px; }
+        .pf-p-tags { display: flex; gap: 8px; margin-bottom: 15px; }
+        .pf-p-tag { font-size: 0.65rem; padding: 4px 10px; background: rgba(255,255,255,0.05); border-radius: 4px; color: var(--sys-text-secondary); font-weight: 600; }
+        .pf-p-title { font-size: 1.25rem; font-weight: 800; margin: 0 0 10px 0; color: var(--sys-text-primary); }
+        .pf-p-desc { font-size: 0.9rem; color: var(--sys-text-secondary); line-height: 1.6; margin-bottom: 20px; }
+        .pf-p-link { display: inline-block; font-size: 0.9rem; font-weight: 700; color: var(--sys-accent); text-decoration: none; display: flex; align-items: center; gap: 5px; }
+        .pf-testimonial { background: rgba(255,255,255,0.03); padding: 25px; border-radius: 16px; border-left: 4px solid var(--sys-accent); margin-bottom: 20px; }
+        .pf-t-quote { font-size: 0.95rem; font-style: italic; color: var(--sys-text-secondary); line-height: 1.6; margin-bottom: 15px; }
+        .pf-t-author { display: flex; align-items: center; gap: 12px; }
+        .pf-t-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .pf-t-name { font-size: 0.9rem; font-weight: 700; color: var(--sys-text-primary); }
+        .pf-t-role { font-size: 0.75rem; color: var(--sys-text-secondary); }
+        .pf-contact-btn { width: 100%; padding: 18px; border-radius: 12px; background: var(--sys-accent); color: white; font-size: 1rem; font-weight: 700; text-align: center; border: none; cursor: pointer; box-shadow: 0 10px 20px rgba(66,133,244,0.3); transition: transform 0.2s; }
+        .pf-contact-btn:active { transform: scale(0.98); }
+        .pf-footer { text-align: center; padding: 30px; font-size: 0.8rem; color: var(--sys-text-secondary); border-top: 1px solid rgba(255,255,255,0.05); margin-top: 20px; }
+        .pf-socials { display: flex; justify-content: center; gap: 20px; margin-top: 15px; font-size: 1.25rem; }
+
+        /* --- NAV BAR --- */
+        #nav-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
+            background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(10px); z-index: 100;
+            display: flex; justify-content: space-around; align-items: center; color: #ccc;
+        }
+        .nav-btn { width: 40px; height: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; border-radius: 4px; }
+        .nav-btn:active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-back::before { content: ''; border-right: 10px solid currentColor; border-top: 6px solid transparent; border-bottom: 6px solid transparent; display: block; }
+        .nav-home::before { content: ''; border: 2px solid currentColor; border-radius: 50%; width: 14px; height: 14px; display: block; }
+        .nav-recents::before { content: ''; border: 2px solid currentColor; width: 14px; height: 14px; display: block; }
+
+        /* --- TOAST --- */
+        #toast {
+            position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(30,30,30, 0.95); color: white; padding: 12px 24px;
+            border-radius: 24px; font-size: 0.8125rem; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s; z-index: 200; text-align: center;
+            white-space: nowrap; box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="phone-frame">
+        <!-- Status Bar -->
+        <div id="status-bar">
+            <span id="status-time">12:00</span>
+            <div class="status-icons">
+                <i id="sb-wifi" class="fas fa-wifi"></i>
+                <i class="fas fa-battery-full"></i>
+            </div>
+        </div>
+
+        <!-- Notification Shade -->
+        <div id="notification-shade">
+            <div class="quick-toggles">
+                <div class="toggle-btn active" id="shade-wifi" onclick="toggleConnectivity('Wi-Fi')">
+                    <i class="fas fa-wifi"></i><span>Wi-Fi</span>
+                </div>
+                <div class="toggle-btn active" id="shade-bt" onclick="toggleConnectivity('Bluetooth')">
+                    <i class="fab fa-bluetooth-b"></i><span>Bluetooth</span>
+                </div>
+                <div class="toggle-btn" onclick="showToast('Flashlight Off')">
+                    <i class="fas fa-flashlight"></i><span>Flashlight</span>
+                </div>
+            </div>
+            <p style="font-size: 12px; opacity: 0.5; margin-top: auto; margin-bottom: 20px;">No Notifications</p>
+        </div>
+
+        <!-- Lock Screen -->
+        <div id="lock-screen">
+            <div class="lock-time" id="lock-clock">12:00</div>
+            <div class="lock-date" id="lock-date">Mon, Jan 1</div>
+            <div class="swipe-hint">
+                <i class="fas fa-chevron-up"></i><br>Swipe up to unlock
+            </div>
+        </div>
+
+        <!-- Home Screen -->
+        <div id="home-screen">
+            <div class="app-grid">
+                <div class="app-icon-container" onclick="openApp('Google')">
+                    <div class="app-icon icon-google">G</div><span class="app-name">Google</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Chrome')">
+                    <div class="app-icon icon-chrome"><i class="fab fa-chrome"></i></div><span class="app-name">Chrome</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Play Store')">
+                    <div class="app-icon icon-playstore"><i class="fab fa-google-play"></i></div><span class="app-name">Play Store</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Resume')">
+                    <div class="app-icon icon-resume"><i class="fas fa-file-alt" style="font-size: 20px;"></i></div><span class="app-name">Resume</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Photos')">
+                    <div class="app-icon icon-photos"><i class="fas fa-images"></i></div><span class="app-name">Photos</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Camera')">
+                    <div class="app-icon icon-camera"><i class="fas fa-camera"></i></div><span class="app-name">Camera</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Settings')">
+                    <div class="app-icon icon-settings"><i class="fas fa-cog"></i></div><span class="app-name">Settings</span>
+                </div>
+                <div class="app-icon-container" onclick="openApp('Messages')">
+                    <div class="app-icon icon-messages"><i class="fas fa-comment-alt"></i></div><span class="app-name">Messages</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Overlay -->
+        <div id="app-overlay">
+            <div class="app-header" id="app-header-text">App Name</div>
+            <div class="app-content" id="app-content-area"></div>
+        </div>
+
+        <!-- Navigation Bar -->
+        <div id="nav-bar">
+            <div class="nav-btn nav-back" onclick="handleNavBack()"></div>
+            <div class="nav-btn nav-home" onclick="handleNavHome()"></div>
+            <div class="nav-btn nav-recents" onclick="handleNavRecents()"></div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast">Message</div>
+    </div>
+
+    <script>
+        const state = {
+            isLocked: true, isAppOpen: false, isShadeOpen: false, touchStartY: 0, currentApp: null,
+            darkMode: true, textSize: 'Medium', iconSize: 'Default', wifi: true, bluetooth: true
+        };
+        const els = {
+            phone: document.getElementById('phone-frame'), lockScreen: document.getElementById('lock-screen'),
+            shade: document.getElementById('notification-shade'), appOverlay: document.getElementById('app-overlay'),
+            toast: document.getElementById('toast'), lockClock: document.getElementById('lock-clock'),
+            statusTime: document.getElementById('status-time'), lockDate: document.getElementById('lock-date'),
+            appHeader: document.getElementById('app-header-text'), appContent: document.getElementById('app-content-area'),
+            sbWifi: document.getElementById('sb-wifi')
+        };
+
+        function updateTime() {
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            els.statusTime.innerText = timeStr; els.lockClock.innerText = timeStr;
+            els.lockDate.innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+        setInterval(updateTime, 1000); updateTime();
+
+        const phoneFrame = document.getElementById('phone-frame');
+        ['touchstart', 'mousedown'].forEach(evt => phoneFrame.addEventListener(evt, handleTouchStart, { passive: false }));
+        ['touchmove', 'mousemove'].forEach(evt => phoneFrame.addEventListener(evt, handleTouchMove, { passive: false }));
+        ['touchend', 'mouseup'].forEach(evt => phoneFrame.addEventListener(evt, handleTouchEnd, { passive: false }));
+
+        function handleTouchStart(e) { state.touchStartY = (e.touches ? e.touches[0] : e).clientY; }
+        function handleTouchMove(e) { e.preventDefault(); }
+        function handleTouchEnd(e) {
+            const diffY = state.touchStartY - (e.changedTouches ? e.changedTouches[0] : e).clientY;
+            const threshold = 50;
+            if (state.isLocked) { if (diffY > threshold) unlockPhone(); }
+            else if (state.isAppOpen) { if(diffY < -threshold && els.appContent.scrollTop === 0) handleNavHome(); }
+            else { if (diffY < -threshold) openShade(); else if (diffY > threshold) closeShade(); }
+        }
+
+        function unlockPhone() { state.isLocked = false; els.lockScreen.classList.add('unlocked'); showToast("Unlocked"); }
+        function openShade() { state.isShadeOpen = true; els.shade.classList.add('active'); }
+        function closeShade() { state.isShadeOpen = false; els.shade.classList.remove('active'); }
+        function handleNavBack() { if (state.isShadeOpen) closeShade(); else if (state.isAppOpen) handleNavHome(); }
+        function handleNavHome() { closeShade(); closeApp(); }
+        function handleNavRecents() { if (!state.isLocked) showToast("No recent apps"); }
+        function showToast(msg) {
+            els.toast.innerText = msg; els.toast.classList.add('visible');
+            setTimeout(() => els.toast.classList.remove('visible'), 2000);
+        }
+        function closeApp() {
+            state.isAppOpen = false; state.currentApp = null;
+            els.appOverlay.classList.remove('open');
+        }
+
+        function openApp(appName) {
+            state.isAppOpen = true; state.currentApp = appName;
+            els.appHeader.innerText = appName;
+            els.appOverlay.classList.add('open');
+            els.appContent.innerHTML = '';
+            if (appName === 'Google') renderGoogleApp();
+            else if (appName === 'Portfolio') renderPortfolioApp();
+            else if (appName === 'Resume') renderResumeApp(); // **FIXED LINKED TO NEW FUNCTION**
+            else if (appName === 'Settings') renderSettingsApp();
+            else renderGenericApp(appName);
+        }
+
+        function renderGenericApp(name) {
+            els.appContent.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100%; flex-direction:column; text-align:center; padding:20px;">
+                <i class="fas fa-rocket" style="font-size:48px; margin-bottom:20px; color:var(--sys-text-secondary);"></i>
+                <h2 style="color:var(--sys-text-primary)">${name}</h2>
+                <p style="color:var(--sys-text-secondary);">Simulation of ${name} interface.</p>
+            </div>`;
+        }
+
+        function renderGoogleApp() {
+            els.appContent.innerHTML = `<div class="google-container">
+                <div class="google-logo"><span class="g-blue">G</span><span class="g-red">o</span><span class="g-yellow">o</span><span class="g-blue">g</span><span class="g-green">l</span><span class="g-red">e</span></div>
+                <div class="search-bar">
+                    <i class="fas fa-search" style="color:#aaa; margin-right:10px;"></i>
+                    <input type="text" class="search-text" value="Alex Sterling Portfolio" readonly>
+                    <i class="fas fa-microphone" style="color:var(--sys-accent);"></i>
+                </div>
+                <div class="search-results active">
+                    <div class="result-stats">1 Result (0.01s)</div>
+                    <div class="result-card" onclick="openApp('Portfolio')">
+                        <div class="result-url"><div class="result-icon">A</div>alexsterling.design</div>
+                        <a href="#" class="result-title">Alex Sterling - Product Designer</a>
+                        <div class="result-desc">Award-winning designer based in SF.</div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderSettingsApp() {
+            const createToggle = (isActive, onClick) => `<div class="toggle-switch ${isActive ? 'active' : ''}" onclick="${onClick}"></div>`;
+            els.appContent.innerHTML = `<div class="settings-container">
+                <h1 class="settings-header">Settings</h1>
+                <div class="settings-section">
+                    <div class="settings-label">Display</div>
+                    <div class="setting-item"><div><div class="setting-title">Dark Mode</div><div class="setting-desc">Adjust system theme</div></div>${createToggle(state.darkMode, 'toggleDarkMode()')}</div>
+                    <div class="setting-item" onclick="cycleTextSize()"><div><div class="setting-title">Text Size</div><div class="setting-desc">Aa</div></div><span class="setting-value" id="val-text-size">${state.textSize}</span></div>
+                    <div class="setting-item" onclick="cycleIconSize()"><div><div class="setting-title">Icon Size</div><div class="setting-desc">Resize grid</div></div><span class="setting-value" id="val-icon-size">${state.iconSize}</span></div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-label">Connectivity</div>
+                    <div class="setting-item"><div><div class="setting-title">Wi-Fi</div></div>${createToggle(state.wifi, 'toggleConnectivity(\'Wi-Fi\')')}</div>
+                    <div class="setting-item"><div><div class="setting-title">Bluetooth</div></div>${createToggle(state.bluetooth, 'toggleConnectivity(\'Bluetooth\')')}</div>
+                </div>
+            </div>`;
+        }
+
+        function toggleDarkMode() {
+            state.darkMode = !state.darkMode;
+            const r = document.documentElement;
+            r.style.setProperty('--sys-bg-primary', state.darkMode ? '#000000' : '#ffffff');
+            r.style.setProperty('--sys-bg-secondary', state.darkMode ? '#121212' : '#f5f5f5');
+            r.style.setProperty('--sys-bg-card', state.darkMode ? '#1e1e1e' : '#f0f0f0');
+            r.style.setProperty('--sys-text-primary', state.darkMode ? '#ffffff' : '#000000');
+            r.style.setProperty('--sys-text-secondary', state.darkMode ? '#aaaaaa' : '#666666');
+            renderSettingsApp();
+        }
+        function cycleTextSize() {
+            const s = ['Small', 'Medium', 'Large']; state.textSize = s[(s.indexOf(state.textSize)+1)%3];
+            document.documentElement.style.setProperty('--sys-font-scale', {Small:0.9, Medium:1.0, Large:1.1}[state.textSize]);
+            document.getElementById('val-text-size').innerText = state.textSize;
+        }
+        function cycleIconSize() {
+            const s = ['Small', 'Default', 'Large']; state.iconSize = s[(s.indexOf(state.iconSize)+1)%3];
+            document.documentElement.style.setProperty('--sys-icon-scale', {Small:0.8, Default:1.0, Large:1.2}[state.iconSize]);
+            document.getElementById('val-icon-size').innerText = state.iconSize;
+        }
+        function toggleConnectivity(t) {
+            if(t==='Wi-Fi') { state.wifi=!state.wifi; document.getElementById('shade-wifi').classList.toggle('active'); els.sbWifi.classList.toggle('status-icon-off'); showToast(`Wi-Fi ${state.wifi?'On':'Off'}`); }
+            else { state.bluetooth=!state.bluetooth; document.getElementById('shade-bt').classList.toggle('active'); showToast(`Bluetooth ${state.bluetooth?'On':'Off'}`); }
+            if(state.currentApp === 'Settings') renderSettingsApp();
+        }
+
+        // --- RESTORED & AWESOME RESUME APP ---
+        function renderResumeApp() {
+            els.appContent.innerHTML = `
+                <div class="resume-container">
+                    <!-- Header -->
+                    <div class="resume-header">
+                        <img src="https://picsum.photos/seed/alexresume/300/300" class="resume-avatar reveal-up">
+                        <h1 class="resume-name reveal-up stagger-1">Alex Sterling</h1>
+                        <div class="resume-title reveal-up stagger-2">Senior Product Designer</div>
+                        <button class="resume-download-btn reveal-up stagger-3" onclick="showToast('Downloading PDF...')">Download PDF</button>
+                        
+                        <div class="resume-contact reveal-up stagger-3">
+                            <div><i class="fas fa-envelope"></i> alex@example.com</div>
+                            <div><i class="fas fa-phone"></i> +1 555-0192</div>
+                            <div><i class="fas fa-map-marker-alt"></i> San Francisco, CA</div>
+                        </div>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="resume-section">
+                        <h2 class="section-title reveal-up">Profile</h2>
+                        <p class="resume-summary reveal-up stagger-1">
+                            Creative and detail-oriented Product Designer with over 6 years of experience in building user-centric digital products. Passionate about solving complex problems through intuitive design and seamless interactions. Proven track record of leading design teams and collaborating with engineering to ship high-quality mobile and web applications.
+                        </p>
+                    </div>
+
+                    <!-- Experience -->
+                    <div class="resume-section">
+                        <h2 class="section-title reveal-up">Experience</h2>
+                        
+                        <div class="resume-card reveal-up stagger-1">
+                            <div class="job-header">
+                                <div>
+                                    <div class="job-role">Senior Product Designer</div>
+                                    <div class="job-company">TechFlow Solutions</div>
+                                </div>
+                                <div class="job-date">2021-Present</div>
+                            </div>
+                            <div class="job-desc">
+                                Spearheaded the redesign of the core mobile application, increasing user retention by 25%. Mentored junior designers and established a comprehensive design system.
+                            </div>
+                        </div>
+
+                        <div class="resume-card reveal-up stagger-2">
+                            <div class="job-header">
+                                <div>
+                                    <div class="job-role">UI/UX Designer</div>
+                                    <div class="job-company">Creative Pulse Agency</div>
+                                </div>
+                                <div class="job-date">2018-2021</div>
+                            </div>
+                            <div class="job-desc">
+                                Collaborated with cross-functional teams to deliver award-winning web experiences for Fortune 500 clients. Conducted user research and usability testing.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="resume-section">
+                        <h2 class="section-title reveal-up">Skills</h2>
+                        <div class="skills-grid reveal-up stagger-1">
+                            <div class="skill-category">
+                                <h4>Design</h4>
+                                <div class="skill-tags">
+                                    <span class="skill-tag">Figma</span>
+                                    <span class="skill-tag">Sketch</span>
+                                    <span class="skill-tag">Adobe XD</span>
+                                    <span class="skill-tag">Prototyping</span>
+                                    <span class="skill-tag">Wireframing</span>
+                                </div>
+                            </div>
+                            <div class="skill-category">
+                                <h4>Development</h4>
+                                <div class="skill-tags">
+                                    <span class="skill-tag">HTML5</span>
+                                    <span class="skill-tag">CSS3</span>
+                                    <span class="skill-tag">JavaScript</span>
+                                    <span class="skill-tag">React</span>
+                                    <span class="skill-tag">Git</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Education -->
+                    <div class="resume-section">
+                        <h2 class="section-title reveal-up">Education</h2>
+                        <div class="resume-card reveal-up stagger-1">
+                            <div class="job-header">
+                                <div>
+                                    <div class="job-role">B.F.A Interaction Design</div>
+                                    <div class="job-company">California Institute of the Arts</div>
+                                </div>
+                                <div class="job-date">2014-2018</div>
+                            </div>
+                            <div class="job-desc">
+                                Graduated with Honors. Focus on Human-Computer Interaction and Digital Media Arts.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const o = new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+                document.querySelectorAll('.reveal-up').forEach(el=>o.observe(el));
+            }, 100);
+        }
+
+        // --- PORTFOLIO APP (Preserved from previous update) ---
+        function renderPortfolioApp() {
+            els.appContent.innerHTML = `
+                <div class="portfolio-wrapper">
+                    <div class="pf-glow"></div>
+                    <div class="pf-hero">
+                        <div class="pf-avatar-container reveal-up"><img src="https://picsum.photos/seed/alexface/200/200" class="pf-avatar"><div class="pf-status-dot"></div></div>
+                        <h1 class="pf-name reveal-up stagger-1">Alex Sterling</h1>
+                        <p class="pf-tagline reveal-up stagger-2">Product Designer & Creative Developer</p>
+                        <div class="pf-stats reveal-up stagger-3">
+                            <div class="pf-stat-item"><span class="pf-stat-num">5+</span><span class="pf-stat-label">Years</span></div>
+                            <div class="pf-stat-item"><span class="pf-stat-num">40+</span><span class="pf-stat-label">Projects</span></div>
+                            <div class="pf-stat-item"><span class="pf-stat-num">100%</span><span class="pf-stat-label">Client Joy</span></div>
+                        </div>
+                    </div>
+                    <div class="pf-section">
+                        <h2 class="pf-title reveal-up">Services</h2>
+                        <div class="pf-services-grid">
+                            <div class="pf-service-card reveal-up stagger-1"><div class="pf-s-icon"><i class="fas fa-pen-nib"></i></div><div class="pf-s-title">UI Design</div><div class="pf-s-desc">High-fidelity interfaces</div></div>
+                            <div class="pf-service-card reveal-up stagger-2"><div class="pf-s-icon"><i class="fas fa-code"></i></div><div class="pf-s-title">Frontend</div><div class="pf-s-desc">React & Web Apps</div></div>
+                            <div class="pf-service-card reveal-up stagger-1"><div class="pf-s-icon"><i class="fas fa-mobile-alt"></i></div><div class="pf-s-title">Mobile</div><div class="pf-s-desc">iOS & Android</div></div>
+                            <div class="pf-service-card reveal-up stagger-2"><div class="pf-s-icon"><i class="fas fa-layer-group"></i></div><div class="pf-s-title">Branding</div><div class="pf-s-desc">Identity & Logos</div></div>
+                        </div>
+                    </div>
+                    <div class="pf-section">
+                        <h2 class="pf-title reveal-up">Experience</h2>
+                        <div class="pf-timeline">
+                            <div class="timeline-item reveal-up stagger-1"><div class="timeline-dot"></div><span class="timeline-date">2021 - Present</span><h3 class="timeline-role">Lead Product Designer</h3><div class="timeline-comp">TechFlow Solutions</div></div>
+                            <div class="timeline-item reveal-up stagger-2"><div class="timeline-dot"></div><span class="timeline-date">2018 - 2021</span><h3 class="timeline-role">Senior UI/UX</h3><div class="timeline-comp">Creative Pulse</div></div>
+                        </div>
+                    </div>
+                    <div class="pf-section">
+                        <h2 class="pf-title reveal-up">Selected Work</h2>
+                        <div class="pf-project-card reveal-up stagger-1"><div class="pf-p-img-wrap"><img src="https://picsum.photos/seed/project1/600/400"></div><div class="pf-p-content"><div class="pf-p-tags"><span class="pf-p-tag">FinTech</span><span class="pf-p-tag">App</span></div><h3 class="pf-p-title">Nova Banking</h3><p class="pf-p-desc">Redesigning digital banking for Gen Z. Increased retention by 40%.</p><a href="#" class="pf-p-link" onclick="showToast('Case Study Loaded')">View Case Study <i class="fas fa-arrow-right"></i></a></div></div>
+                        <div class="pf-project-card reveal-up stagger-2"><div class="pf-p-img-wrap"><img src="https://picsum.photos/seed/project2/600/400"></div><div class="pf-p-content"><div class="pf-p-tags"><span class="pf-p-tag">E-Commerce</span><span class="pf-p-tag">Web</span></div><h3 class="pf-p-title">Luxe Market</h3><p class="pf-p-desc">A premium shopping experience with AR try-on features.</p><a href="#" class="pf-p-link" onclick="showToast('Case Study Loaded')">View Case Study <i class="fas fa-arrow-right"></i></a></div></div>
+                    </div>
+                    <div class="pf-section">
+                        <h2 class="pf-title reveal-up">Testimonials</h2>
+                        <div class="pf-testimonial reveal-up stagger-1"><p class="pf-t-quote">"Alex transformed our vision into a reality. The attention to detail and UX logic was top-tier."</p><div class="pf-t-author"><img src="https://picsum.photos/seed/ceo/50/50" class="pf-t-img"><div><div class="pf-t-name">Sarah Jenkins</div><div class="pf-t-role">CEO, TechFlow</div></div></div></div>
+                    </div>
+                    <div class="pf-section">
+                        <h2 class="pf-title reveal-up">Get In Touch</h2>
+                        <button class="pf-contact-btn reveal-up stagger-1" onclick="showToast('Email Copied!')">Say Hello <i class="fas fa-envelope" style="margin-left:8px;"></i></button>
+                        <div class="pf-footer"><div>&copy; 2023 Alex Sterling.</div><div class="pf-socials"><i class="fab fa-linkedin"></i><i class="fab fa-dribbble"></i><i class="fab fa-twitter"></i></div></div>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                const o = new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('visible')})},{threshold:0.1});
+                document.querySelectorAll('.reveal-up').forEach(el=>o.observe(el));
+            }, 100);
+        }
+
+        els.shade.addEventListener('click', (e) => { if(e.target === els.shade) closeShade(); });
+    </script>
+</body>
+</html>

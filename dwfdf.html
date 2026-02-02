@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winter Village - Playable Scene</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #dbe6f6;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        header {
+            color: #2c3e50;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        h1 { margin: 0; font-size: 2.2rem; font-weight: 700; }
+        p.subtitle { margin: 5px 0 0 0; font-size: 1.1rem; opacity: 0.8; font-weight: 500; }
+
+        .inspiration-card {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            max-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .inspiration-card img { width: 100%; height: 150px; border-radius: 8px; margin-bottom: 8px; object-fit: cover; }
+        .inspiration-card h3 { margin-top: 0; color: #2c3e50; }
+        .inspiration-card p { font-size: 0.85rem; color: #555; margin: 0; }
+
+        /* Control Instructions Panel */
+        .controls-panel {
+            pointer-events: auto;
+            background: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .key {
+            display: inline-block;
+            background: #eee;
+            color: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin: 0 2px;
+            box-shadow: 0 2px 0 #ccc;
+        }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <main id="ui-layer">
+        <header>
+            <h1>Winter Adventure</h1>
+            <p class="subtitle">Explore the Silent Village</p>
+        </header>
+
+        <div style="flex-grow: 1;"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;">
+            <article class="inspiration-card">
+                <h3>Scene Reference</h3>
+                <img src="https://z-cdn-media.chatglm.cn/files/8b0f4247-c276-484c-858f-29e6919e00c9.png?auth_key=1866595544-b1ec134496b04910a6156b117970038f-0-afa3a958adc8c7009830c3a3ee127ef7" alt="Winter landscape reference">
+                <p>"Winter snow scene with an ancient carved wooden building, forest, people in thick clothes, a wooden cart, and a wood pile."</p>
+            </article>
+
+            <div class="controls-panel">
+                <h3 style="margin-top:0; border-bottom: 1px solid #555; padding-bottom:5px;">Controls</h3>
+                <div><span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span class="key">D</span> or <span class="key">Arrows</span> to Move</div>
+                <div><span class="key">Up Arrow</span> to Jump</div>
+                <div><span class="key">Down Arrow</span> to Crouch</div>
+                <div><span class="key">Double Click</span> to Sleep / Wake</div>
+                <div>🖱️ Drag to Rotate Camera</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="canvas-container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- Config ---
+        const CONFIG = {
+            skyColor: 0xdbe6f6,
+            groundColor: 0xffffff,
+            woodDark: 0x3e2723,
+            woodLight: 0x8d6e63,
+            roofColor: 0x4e342e,
+        };
+
+        // --- Globals ---
+        let scene, camera, renderer, controls;
+        let snowSystem, particles;
+        const clock = new THREE.Clock();
+
+        // --- Player Globals ---
+        const player = {
+            mesh: null,
+            velocity: new THREE.Vector3(),
+            direction: new THREE.Vector3(),
+            speed: 5,
+            jumpForce: 8,
+            gravity: 20,
+            isGrounded: false,
+            isCrouching: false,
+            isSleeping: false,
+            inputs: { forward: false, backward: false, left: false, right: false, jump: false, crouch: false }
+        };
+
+        init();
+        animate();
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            // 1. Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(CONFIG.skyColor);
+            scene.fog = new THREE.FogExp2(CONFIG.skyColor, 0.015);
+
+            // 2. Camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 5, 8);
+
+            // 3. Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // 4. Lighting
+            setupLighting();
+
+            // 5. Environment
+            createGround();
+            createTrees();
+            createSnowParticles();
+
+            // 6. Objects
+            createMainHouse();
+            createShed();
+            createWoodPile();
+            createCart();
+            createNPCs();
+
+            // 7. Player
+            createPlayer();
+
+            // 8. Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = false; // Disable panning to keep player centered logic simple
+            
+            // Events
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            window.addEventListener('dblclick', toggleSleep);
+        }
+
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xfff0dd, 1.2);
+            dirLight.position.set(-10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 50;
+            dirLight.shadow.camera.left = -20;
+            dirLight.shadow.camera.right = 20;
+            dirLight.shadow.camera.top = 20;
+            dirLight.shadow.camera.bottom = -20;
+            scene.add(dirLight);
+        }
+
+        // --- Procedural World (Same as previous, slightly optimized) ---
+        function createGround() {
+            const geometry = new THREE.PlaneGeometry(100, 100);
+            const material = new THREE.MeshStandardMaterial({ color: CONFIG.groundColor, roughness: 1, metalness: 0 });
+            const ground = new THREE.Mesh(geometry, material);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+
+        function createTrees() {
+            const treeMat = new THREE.MeshStandardMaterial({ color: 0x2d4c1e });
+            const snowMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const trunkMat = new THREE.MeshStandardMaterial({ color: CONFIG.woodDark });
+
+            for (let i = 0; i < 40; i++) {
+                const angle = (i / 40) * Math.PI * 2;
+                const radius = 12 + Math.random() * 20;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const treeGroup = new THREE.Group();
+
+                const trunkHeight = 1 + Math.random();
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, trunkHeight, 6), trunkMat);
+                trunk.position.y = trunkHeight / 2;
+                trunk.castShadow = true;
+                treeGroup.add(trunk);
+
+                const levels = 3;
+                for(let j=0; j<levels; j++) {
+                    const cone = new THREE.Mesh(new THREE.ConeGeometry(1.5 - j*0.3, 2, 8), treeMat);
+                    cone.position.y = trunkHeight + 1 + j*1.2;
+                    cone.castShadow = true;
+                    treeGroup.add(cone);
+                    const snow = new THREE.Mesh(new THREE.ConeGeometry(1.5 - j*0.3 - 0.2, 0.8, 8), snowMat);
+                    snow.position.y = trunkHeight + 1.5 + j*1.2;
+                    treeGroup.add(snow);
+                }
+                treeGroup.position.set(x, 0, z);
+                scene.add(treeGroup);
+            }
+        }
+
+        function createMainHouse() {
+            const houseGroup = new THREE.Group();
+            const logMat = new THREE.MeshStandardMaterial({ color: CONFIG.woodDark, roughness: 0.9 });
+            const roofMat = new THREE.MeshStandardMaterial({ color: CONFIG.roofColor, roughness: 0.8 });
+            const snowMat = new THREE.MeshStandardMaterial({ color: CONFIG.snowOnRoof, roughness: 1 });
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 5), logMat);
+            body.position.y = 2;
+            body.castShadow = true;
+            houseGroup.add(body);
+
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(5.5, 2.5, 4), roofMat);
+            roof.position.y = 5.25;
+            roof.rotation.y = Math.PI / 4;
+            roof.scale.set(1, 1, 1.2);
+            roof.castShadow = true;
+            houseGroup.add(roof);
+
+            const snowCap = new THREE.Mesh(new THREE.ConeGeometry(5.4, 1, 4), snowMat);
+            snowCap.position.y = 6;
+            snowCap.rotation.y = Math.PI / 4;
+            snowCap.scale.set(1, 0.5, 1.2);
+            houseGroup.add(snowCap);
+
+            houseGroup.position.set(0, 0, -10);
+            scene.add(houseGroup);
+        }
+
+        function createShed() {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: CONFIG.woodLight, roughness: 0.9 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(3, 2.5, 3), mat);
+            body.position.y = 1.25;
+            body.castShadow = true;
+            group.add(body);
+            const roof = new THREE.Mesh(new THREE.ConeGeometry(3, 1.5, 4), mat);
+            roof.position.y = 3;
+            roof.rotation.y = Math.PI / 4;
+            group.add(roof);
+            group.position.set(-6, 0, -6);
+            scene.add(group);
+        }
+
+        function createWoodPile() {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: CONFIG.woodLight });
+            for(let i=0; i<3; i++) {
+                for(let j=0; j<4; j++) {
+                    const log = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.5, 8), mat);
+                    log.rotation.z = Math.PI / 2;
+                    log.position.set(j*0.2 - 0.3, i*0.3 + 0.2, 0);
+                    log.castShadow = true;
+                    group.add(log);
+                }
+            }
+            group.position.set(-4.5, 0, -4);
+            scene.add(group);
+        }
+
+        function createCart() {
+            const cartGroup = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({ color: CONFIG.woodDark });
+            const base = new THREE.Mesh(new THREE.BoxGeometry(2, 0.5, 1), woodMat);
+            base.position.y = 0.5;
+            cartGroup.add(base);
+            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 16);
+            const w1 = new THREE.Mesh(wheelGeo, woodMat); w1.rotation.set(0,0,Math.PI/2); w1.position.set(0.8, 0.4, 0.6); cartGroup.add(w1);
+            const w2 = w1.clone(); w2.position.set(-0.8, 0.4, 0.6); cartGroup.add(w2);
+            cartGroup.position.set(4, 0, -6);
+            cartGroup.rotation.y = -Math.PI / 6;
+            scene.add(cartGroup);
+        }
+
+        function createNPCs() {
+             // Simple static NPCs just for atmosphere
+             const colors = [0xbf360c, 0x263238];
+             colors.forEach((col, idx) => {
+                const group = new THREE.Group();
+                const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.8, 8), new THREE.MeshStandardMaterial({color: col}));
+                coat.position.y = 0.4;
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({color: 0xffccaa}));
+                head.position.y = 0.9;
+                group.add(coat, head);
+                group.position.set(3 + idx, 0, -2);
+                group.castShadow = true;
+                scene.add(group);
+             });
+        }
+
+        function createSnowParticles() {
+            const count = 1500;
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            for (let i = 0; i < count; i++) {
+                positions.push((Math.random() - 0.5) * 60, Math.random() * 20, (Math.random() - 0.5) * 60);
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            snowSystem = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0xffffff, size: 0.15, transparent: true, opacity: 0.8 }));
+            scene.add(snowSystem);
+        }
+
+        // --- Player Character Logic ---
+
+        function createPlayer() {
+            // Create a cute snowman/winter-child style character
+            player.mesh = new THREE.Group();
+
+            // Materials
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const redMat = new THREE.MeshStandardMaterial({ color: 0xd32f2f });
+            const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+            // Body
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 0.9, 16), whiteMat);
+            body.position.y = 0.45;
+            body.castShadow = true;
+            player.mesh.add(body);
+
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), whiteMat);
+            head.position.y = 1.0;
+            head.castShadow = true;
+            player.mesh.add(head);
+
+            // Hat (Beanie)
+            const hat = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.3, 16), redMat);
+            hat.position.y = 1.25;
+            player.mesh.add(hat);
+
+            // Scarf
+            const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.08, 8, 16), redMat);
+            scarf.rotation.x = Math.PI / 2;
+            scarf.position.y = 0.85;
+            player.mesh.add(scarf);
+
+            // Eyes
+            const eyeGeo = new THREE.SphereGeometry(0.03, 8, 8);
+            const leftEye = new THREE.Mesh(eyeGeo, blackMat); leftEye.position.set(-0.1, 1.05, 0.22);
+            const rightEye = new THREE.Mesh(eyeGeo, blackMat); rightEye.position.set(0.1, 1.05, 0.22);
+            player.mesh.add(leftEye);
+            player.mesh.add(rightEye);
+
+            // Initial Position
+            player.mesh.position.set(0, 0, 2);
+            scene.add(player.mesh);
+        }
+
+        function toggleSleep() {
+            player.isSleeping = !player.isSleeping;
+            
+            if (player.isSleeping) {
+                // Sleep animation: Lie down
+                // We use GSAP-like logic in update loop, but for simplicity let's set target rotation
+                player.mesh.targetRotation = -Math.PI / 2;
+                player.mesh.targetY = 0.25; // Lie flat
+            } else {
+                // Wake up animation: Stand up
+                player.mesh.targetRotation = 0;
+                player.mesh.targetY = 0;
+            }
+        }
+
+        function updatePlayer(delta) {
+            // 1. Handle Sleep/Wake Animations (Lerp)
+            if (player.mesh.targetRotation !== undefined) {
+                player.mesh.rotation.z = THREE.MathUtils.lerp(player.mesh.rotation.z, player.mesh.targetRotation, delta * 5);
+                player.mesh.position.y = THREE.MathUtils.lerp(player.mesh.position.y, player.mesh.targetY, delta * 5);
+                
+                // Snap if close
+                if (Math.abs(player.mesh.rotation.z - player.mesh.targetRotation) < 0.01) {
+                    player.mesh.rotation.z = player.mesh.targetRotation;
+                    player.mesh.position.y = player.mesh.targetY;
+                    if(player.isSleeping) player.mesh.targetRotation = undefined; // Done sleeping
+                    else player.mesh.targetRotation = undefined; // Done waking
+                }
+            }
+
+            if (player.isSleeping) return; // No controls if sleeping
+
+            // 2. Handle Crouch (Scale Y)
+            let targetScaleY = player.inputs.crouch ? 0.6 : 1.0;
+            player.mesh.scale.y = THREE.MathUtils.lerp(player.mesh.scale.y, targetScaleY, delta * 10);
+            
+            // Adjust position based on scale so feet stay on ground
+            // Simple visual adjustment: center of mass moves, but let's assume pivot is at feet for simplicity in this specific setup,
+            // or just let the geometry scale naturally. Since body is at y=0.45, scaling down visually lowers center. 
+            // We'll compensate slightly:
+            player.mesh.position.y = THREE.MathUtils.lerp(player.mesh.position.y, targetScaleY === 0.6 ? 0.2 : 0, delta * 10);
+
+            // 3. Movement Logic
+            player.direction.set(0, 0, 0);
+            const moveSpeed = player.inputs.crouch ? player.speed * 0.5 : player.speed;
+
+            // Input mapping
+            if (player.inputs.forward) player.direction.z -= 1;
+            if (player.inputs.backward) player.direction.z += 1;
+            if (player.inputs.left) player.direction.x -= 1;
+            if (player.inputs.right) player.direction.x += 1;
+
+            // Normalize vector
+            if (player.direction.length() > 0) {
+                player.direction.normalize();
+                
+                // Rotate player to face direction
+                const angle = Math.atan2(player.direction.x, player.direction.z);
+                // Smooth rotation
+                const targetRotation = angle;
+                // Minimal rotation logic
+                player.mesh.rotation.y = THREE.MathUtils.lerp(player.mesh.rotation.y, targetRotation, 0.1);
+            }
+
+            // Apply Movement
+            player.mesh.position.x += player.direction.x * moveSpeed * delta;
+            player.mesh.position.z += player.direction.z * moveSpeed * delta;
+
+            // 4. Jump & Gravity Logic
+            // Check if on ground (simple Y check)
+            // Adjusted "ground level" based on crouch animation offset hack from step 2
+            const groundLevel = player.inputs.crouch ? 0.2 : 0;
+            player.isGrounded = player.mesh.position.y <= groundLevel + 0.05;
+
+            if (player.inputs.jump && player.isGrounded) {
+                player.velocity.y = player.jumpForce;
+            }
+
+            // Apply Gravity
+            player.velocity.y -= player.gravity * delta;
+            player.mesh.position.y += player.velocity.y * delta;
+
+            // Floor Collision
+            if (player.mesh.position.y < groundLevel) {
+                player.mesh.position.y = groundLevel;
+                player.velocity.y = 0;
+            }
+        }
+
+        // --- Input Handling ---
+        function onKeyDown(event) {
+            switch(event.code) {
+                case 'ArrowUp': 
+                case 'KeyW': 
+                    player.inputs.forward = true; 
+                    // Special case: Arrow Up also triggers Jump per request
+                    if(event.code === 'ArrowUp') player.inputs.jump = true;
+                    break;
+                case 'ArrowDown': 
+                case 'KeyS': 
+                    player.inputs.backward = true; 
+                    if(event.code === 'ArrowDown') player.inputs.crouch = true;
+                    break;
+                case 'ArrowLeft': 
+                case 'KeyA': player.inputs.left = true; break;
+                case 'ArrowRight': 
+                case 'KeyD': player.inputs.right = true; break;
+            }
+        }
+
+        function onKeyUp(event) {
+            switch(event.code) {
+                case 'ArrowUp': 
+                case 'KeyW': 
+                    player.inputs.forward = false; 
+                    if(event.code === 'ArrowUp') player.inputs.jump = false;
+                    break;
+                case 'ArrowDown': 
+                case 'KeyS': 
+                    player.inputs.backward = false; 
+                    if(event.code === 'ArrowDown') player.inputs.crouch = false;
+                    break;
+                case 'ArrowLeft': 
+                case 'KeyA': player.inputs.left = false; break;
+                case 'ArrowRight': 
+                case 'KeyD': player.inputs.right = false; break;
+            }
+        }
+
+        // --- Main Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Update Player
+            updatePlayer(delta);
+
+            // Update Camera Target to follow player
+            if(player.mesh) {
+                const targetPos = player.mesh.position.clone();
+                // Add offset for camera height relative to player
+                controls.target.lerp(targetPos, 0.1);
+                
+                // Optional: Make camera follow player position too (Third person rigid feel)
+                // camera.position.x += (player.mesh.position.x - camera.position.x) * 0.05;
+                // camera.position.z += (player.mesh.position.z + 5 - camera.position.z) * 0.05;
+            }
+
+            // Animate Snow
+            if (snowSystem) {
+                const positions = snowSystem.geometry.attributes.position.array;
+                for (let i = 1; i < positions.length; i += 3) {
+                    positions[i] -= 0.05 + Math.random() * 0.05;
+                    if (positions[i] < 0) positions[i] = 20;
+                }
+                snowSystem.geometry.attributes.position.needsUpdate = true;
+                snowSystem.rotation.y = clock.getElapsedTime() * 0.02;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html>
