@@ -27,4 +27,5 @@ function renderTodo(){
 
 function addTodo(){
     const inputElm = document.querySelector('.js-input')
+    const name = inputElm.value    
 }
