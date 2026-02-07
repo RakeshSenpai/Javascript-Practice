@@ -24,3 +24,7 @@ function renderTodo(){
         
     })
 }
+
+function addTodo(){
+    
+}
