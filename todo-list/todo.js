@@ -26,5 +26,5 @@ function renderTodo(){
 }
 
 function addTodo(){
-    
+    const inputElm = document.querySelector('.js-input')
 }
