@@ -1,4 +1,3 @@
-const input = document.querySelector('.js-input')
 const addBtn = document.querySelector('.add-btn')
 
 let todoList = [
@@ -20,12 +19,14 @@ function renderTodo(){
     container.appendChild(div)
     todoList.forEach((items) => {
         const name = items.name
-        div.textContent = name
-        
+        div.textContent = name        
+        container.appendChild(div)
     })
 }
 
+
 function addTodo(){
-    const inputElm = document.querySelector('.js-input')
-    const name = inputElm.value    
+const inputElm = document.querySelector('.js-input')
+const input = input.value
+
 }

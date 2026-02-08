@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>PocketLedger Pro</title>
+    <style>
+        /* --- VARIABLES --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --success: #10b981;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --nav-height: 70px;
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #000000;
+            --bg-card: #1c1c1e;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: #2d2d30;
+            --primary-light: #1e1b4b;
+            --danger-light: #450a0a;
+        }
+
+        /* --- RESET --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        body { 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            height: 100vh; 
+            overflow: hidden; 
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        input, textarea { 
+            user-select: text !important; 
+            -webkit-user-select: text !important; 
+            pointer-events: auto !important;
+        }
+
+        /* --- LAYOUT --- */
+        #app { max-width: 600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; position: relative; }
+        
+        .view {
+            position: absolute; inset: 0; padding: 20px; overflow-y: auto;
+            padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 20px);
+            opacity: 0; transform: translateY(10px); pointer-events: none; transition: 0.25s ease;
+        }
+        .view.active { opacity: 1; transform: translateY(0); pointer-events: auto; z-index: 10; }
+        .view::-webkit-scrollbar { display: none; }
+
+        /* --- COMPONENTS --- */
+        .header { margin-bottom: 20px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 28px; font-weight: 800; }
+
+        .card { background: var(--bg-card); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border); }
+        
+        .bal-card { background: linear-gradient(135deg, #4f46e5, #9333ea); color: white; border: none; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; }
+        .bal-amt { font-size: 36px; font-weight: 800; letter-spacing: -1px; }
+
+        .tx-group { margin-bottom: 20px; }
+        .tx-date { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tx-item { display: flex; align-items: center; background: var(--bg-card); padding: 16px; border-bottom: 1px solid var(--border); transition: background 0.2s; }
+        .tx-item:active { background: var(--border); }
+        .tx-item:first-child { border-top-left-radius: 16px; border-top-right-radius: 16px; }
+        .tx-item:last-child { border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; border-bottom: none; }
+        
+        .tx-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 14px; flex-shrink: 0; }
+        .tx-info { flex: 1; min-width: 0; }
+        .tx-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tx-sub { font-size: 13px; color: var(--text-muted); }
+        .tx-amt { font-weight: 700; font-size: 16px; margin-left: 10px; }
+        .inc { color: var(--success); } .exp { color: var(--text-main); }
+
+        /* FORMS */
+        .inp-group { margin-bottom: 20px; position: relative; z-index: 20; }
+        .inp-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+        
+        .inp { 
+            width: 100%; background: var(--bg-card); color: var(--text-main); 
+            border: 2px solid var(--border); border-radius: 14px; padding: 14px; 
+            font-size: 16px; font-weight: 500; appearance: none; 
+            position: relative; z-index: 20; transition: border-color 0.2s, transform 0.1s;
+        }
+        .inp:focus { border-color: var(--primary); }
+        .inp.shake { animation: shake 0.4s ease-in-out; border-color: var(--danger); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .seg-ctrl { display: flex; background: var(--border); padding: 4px; border-radius: 14px; margin-bottom: 20px; }
+        .seg-btn { flex: 1; padding: 10px; text-align: center; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--text-muted); transition: 0.2s; cursor: pointer; }
+        .seg-btn.active { background: var(--bg-card); color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .seg-btn.active.inc { color: var(--success); }
+        .seg-btn.active.exp { color: var(--danger); }
+
+        /* CATEGORY GRID */
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 100px));
+            gap: 10px;
+        }
+
+
+        .cat-item {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 8px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .cat-item.selected {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 4px 12px var(--shadow);
+            transform: translateY(-2px);
+        }
+        .cat-item:active { transform: scale(0.96); }
+        .cat-icon { font-size: 20px; }
+        .cat-icon svg { width: 28px; height: 28px; }
+        .cat-name { font-size: 10px; font-weight: 600; color: var(--text-main); }
+
+        /* BUTTONS */
+        .btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.1s; cursor: pointer; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger-light); color: var(--danger); }
+        .btn-ghost { background: transparent; color: var(--text-muted); }
+
+        /* TOAST NOTIFICATION */
+        #toast {
+            position: fixed; top: 10px; left: 50%; transform: translateX(-50%) translateY(-100px);
+            background: var(--text-main); color: var(--bg-card);
+            padding: 12px 24px; border-radius: 50px; font-weight: 600; font-size: 14px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); z-index: 2000;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; gap: 8px; pointer-events: none;
+            white-space: nowrap;
+        }
+        #toast.show { transform: translateX(-50%) translateY(20px); }
+        #toast.error { background: var(--danger); color: white; }
+        #toast.success { background: var(--success); color: white; }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+            display: flex; align-items: flex-end; justify-content: center;
+            opacity: 0; pointer-events: none; transition: 0.2s; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        
+        .modal-sheet {
+            width: 100%; max-width: 600px; background: var(--bg-card);
+            border-top-left-radius: 24px; border-top-right-radius: 24px;
+            padding: 24px; padding-bottom: calc(24px + var(--safe-bottom));
+            transform: translateY(100%); transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.open .modal-sheet { transform: translateY(0); }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .action-btn { padding: 20px; border-radius: 16px; border: none; font-weight: 600; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .action-edit { background: var(--primary-light); color: var(--primary); }
+        .action-del { background: var(--danger-light); color: var(--danger); }
+
+        /* NAV */
+        .nav {
+            position: fixed; bottom: 0; left: 0; right: 0; height: calc(var(--nav-height) + var(--safe-bottom));
+            background: var(--bg-card); border-top: 1px solid var(--border);
+            display: grid; grid-template-columns: repeat(3, 1fr); padding-bottom: var(--safe-bottom);
+            z-index: 50; max-width: 600px; margin: 0 auto;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); height: 100%; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item svg { width: 24px; height: 24px; stroke-width: 2.5; margin-bottom: 4px; }
+        
+        .fab {
+            width: 56px; height: 56px; background: var(--text-main); color: var(--bg-card);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            transform: translateY(-20px); box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <div id="v-home" class="view active">
+        <div class="header">
+            <div>
+                <div style="font-size:13px; color:var(--text-muted); font-weight:600;">WALLET</div>
+                <h1>My Budget</h1>
+            </div>
+            <div onclick="nav('v-settings')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+        </div>
+
+        <div class="card bal-card">
+            <div>
+                <div style="opacity:0.8; font-size:14px; font-weight:500;">Total Balance</div>
+                <div class="bal-amt" id="home-bal">₹0.00</div>
+            </div>
+            <div style="display:flex; gap:20px;">
+                <div>
+                    <div style="opacity:0.7; font-size:12px;">Income</div>
+                    <div style="font-weight:700;" id="home-inc">₹0</div>
+                </div>
+                <div>
+                    <div style="opacity:0.7; font-size:12px;">Expense</div>
+                    <div style="font-weight:700;" id="home-exp">₹0</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tx-list"></div>
+        <div id="empty-state" style="text-align:center; padding:40px; opacity:0.5; display:none;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p style="margin-top:10px;">No transactions</p>
+        </div>
+    </div>
+
+    <div id="v-stats" class="view">
+        <div class="header"><h1>Stats</h1></div>
+        
+        <div class="seg-ctrl">
+            <div id="btn-stats-breakdown" class="seg-btn active exp" onclick="setStatsType('breakdown')">Breakdown</div>
+            <div id="btn-stats-flow" class="seg-btn" onclick="setStatsType('cashflow')">Cash Flow</div>
+        </div>
+
+        <div class="card" style="text-align:center;">
+            <div id="chart-wrapper" style="width:160px; height:160px; margin:0 auto; position:relative;">
+                <svg viewBox="0 0 100 100" style="transform: rotate(-90deg);" id="donut-chart"></svg>
+            </div>
+            <div id="stats-legend" style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:20px;"></div>
+        </div>
+        <div id="stats-list"></div>
+    </div>
+
+    <div id="v-add" class="view">
+        <div class="header"><h1 id="form-title">New Transaction</h1></div>
+
+        <div class="seg-ctrl">
+            <div id="btn-type-exp" class="seg-btn active exp" onclick="setFormType('expense')">Expense</div>
+            <div id="btn-type-inc" class="seg-btn" onclick="setFormType('income')">Income</div>
+        </div>
+
+        <div class="inp-group">
+            <label class="inp-label">Amount</label>
+            <input type="number" id="inp-amt" class="inp" placeholder="0.00" style="font-size:24px; font-weight:700;" inputmode="decimal" step="any">
+        </div>
+
+        <div class="inp-group">
+            <label class="inp-label">Category</label>
+            <div id="cat-grid" class="cat-grid"></div>
+        </div>
+
+        <div class="inp-group">
+            <label class="inp-label">Date</label>
+            <input type="date" id="inp-date" class="inp">
+        </div>
+
+        <div class="inp-group">
+            <label class="inp-label">Note (Optional)</label>
+            <input type="text" id="inp-note" class="inp" placeholder="e.g. Dinner">
+        </div>
+
+        <button class="btn btn-primary" onclick="saveTx()">
+            <span id="btn-save-text">Save Transaction</span>
+        </button>
+        <button class="btn btn-ghost" style="margin-top:10px;" onclick="nav('v-home')">Cancel</button>
+    </div>
+
+    <div id="v-settings" class="view">
+        <div class="header"><h1>Settings</h1></div>
+        <div class="card">
+            <div class="inp-group">
+                <label class="inp-label">Currency</label>
+                <select id="set-curr" class="inp" onchange="updateSettings()">
+                    <option value="₹">INR (₹)</option>
+                    <option value="$">USD ($)</option>
+                </select>
+            </div>
+            <div class="inp-group">
+                <label class="inp-label">Theme</label>
+                <select id="set-theme" class="inp" onchange="updateSettings()">
+                    <option value="auto">Auto</option>
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </div>
+        </div>
+        <div class="card">
+            <button class="btn btn-ghost" style="border:1px solid var(--border); margin-bottom:10px;" onclick="exportData()">Export Data (JSON)</button>
+            <button class="btn btn-ghost" style="border:1px solid var(--border);" onclick="document.getElementById('file-imp').click()">Import Data</button>
+            <input type="file" id="file-imp" style="display:none" onchange="importData(this)">
+        </div>
+        <button class="btn btn-danger" onclick="confirmReset()">Reset App</button>
+    </div>
+
+    <div class="nav">
+        <div class="nav-item active" id="nav-home" onclick="nav('v-home')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span style="font-size:10px; font-weight:600;">Home</span>
+        </div>
+        <div style="display:flex; justify-content:center; align-items:center;" onclick="openAdd()">
+            <div class="fab"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+        </div>
+        <div class="nav-item" id="nav-stats" onclick="nav('v-stats')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+            <span style="font-size:10px; font-weight:600;">Stats</span>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="modal-opts" class="modal-overlay" onclick="closeModal('modal-opts')">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <h3 id="opt-title" style="margin-bottom:8px; font-size:20px;">Transaction</h3>
+            <p id="opt-desc" style="color:var(--text-muted); font-size:14px;">Select an action</p>
+            
+            <div class="action-grid">
+                <button class="action-btn action-edit" onclick="triggerEdit()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    Edit
+                </button>
+                <button class="action-btn action-del" onclick="triggerDeleteConfirm()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    Delete
+                </button>
+            </div>
+            <button class="btn btn-ghost" style="margin-top:20px;" onclick="closeModal('modal-opts')">Close</button>
+        </div>
+    </div>
+
+    <div id="modal-confirm" class="modal-overlay">
+        <div class="modal-sheet">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="width:60px; height:60px; background:var(--danger-light); color:var(--danger); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </div>
+                <h3 style="margin-bottom:8px;">Are you sure?</h3>
+                <p style="color:var(--text-muted); font-size:14px;">This action cannot be undone.</p>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-ghost" style="background:var(--border);" onclick="closeModal('modal-confirm')">Cancel</button>
+                <button class="btn btn-danger" onclick="performDelete()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- STATE & CONFIG ---
+    const KEY = 'pocketledger_pro_v10';
+    const CATS = {
+        expense: [
+            { id: 'food', name: 'Food', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="20" stroke="#333" stroke-width="3" fill="#f5f5f5"/><circle cx="32" cy="32" r="12" stroke="#999" stroke-width="2" fill="none"/><rect x="14" y="12" width="2" height="22" fill="#333"/><rect x="12" y="10" width="2" height="6" fill="#333"/><rect x="14" y="10" width="2" height="6" fill="#333"/><rect x="16" y="10" width="2" height="6" fill="#333"/><rect x="18" y="10" width="2" height="6" fill="#333"/><ellipse cx="48" cy="14" rx="4" ry="6" fill="#333"/><rect x="47" y="18" width="2" height="18" fill="#333"/></svg>', color: '#f59e0b' },
+            { id: 'transport', name: 'Transport', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="28" width="44" height="12" rx="3" stroke="#333" stroke-width="3"/><path d="M18 28 L24 20 H40 L46 28" stroke="#333" stroke-width="3" fill="none"/><circle cx="22" cy="44" r="4" fill="#333"/><circle cx="42" cy="44" r="4" fill="#333"/></svg>', color: '#3b82f6' },
+            { id: 'shop', name: 'Shopping', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="50" r="3" fill="#333"/><circle cx="44" cy="50" r="3" fill="#333"/><path d="M10 14 H16 L22 40 H46 L52 22 H20" stroke="#333" stroke-width="3" fill="none"/></svg>', color: '#ec4899' },
+            { id: 'bill', name: 'Bills', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="10" width="28" height="44" rx="3" stroke="#333" stroke-width="3"/><path d="M32 18 L26 32 H34 L28 46" stroke="#333" stroke-width="3" fill="none"/></svg>', color: '#ef4444' },
+            { id: 'ent', name: 'Fun', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="18" width="44" height="28" rx="3" stroke="#333" stroke-width="3"/><polygon points="28,26 42,32 28,38" fill="#333"/></svg>', color: '#8b5cf6' },
+            { id: 'health', name: 'Health', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 52 C10 36 14 18 26 18 C30 18 32 22 32 22 C32 22 34 18 38 18 C50 18 54 36 32 52 Z" stroke="#333" stroke-width="3" fill="none"/></svg>', color: '#10b981' },
+            { id: 'other', name: 'Others', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="18" width="36" height="28" rx="2" stroke="#333" stroke-width="3"/><path d="M14 26 H50" stroke="#333" stroke-width="3"/></svg>', color: '#64748b' }
+        ],
+        income: [
+            { id: 'sal', name: 'Salary', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="20" stroke="#333" stroke-width="3" fill="#f5f5f5"/><circle cx="32" cy="32" r="12" stroke="#999" stroke-width="2" fill="none"/><rect x="14" y="12" width="2" height="22" fill="#333"/><rect x="12" y="10" width="2" height="6" fill="#333"/><rect x="14" y="10" width="2" height="6" fill="#333"/><rect x="16" y="10" width="2" height="6" fill="#333"/><rect x="18" y="10" width="2" height="6" fill="#333"/><ellipse cx="48" cy="14" rx="4" ry="6" fill="#333"/><rect x="47" y="18" width="2" height="18" fill="#333"/></svg>', color: '#10b981' },
+            { id: 'biz', name: 'Business', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="28" width="44" height="12" rx="3" stroke="#333" stroke-width="3"/><path d="M18 28 L24 20 H40 L46 28" stroke="#333" stroke-width="3" fill="none"/><circle cx="22" cy="44" r="4" fill="#333"/><circle cx="42" cy="44" r="4" fill="#333"/></svg>', color: '#3b82f6' },
+            { id: 'gift', name: 'Gift', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="50" r="3" fill="#333"/><circle cx="44" cy="50" r="3" fill="#333"/><path d="M10 14 H16 L22 40 H46 L52 22 H20" stroke="#333" stroke-width="3" fill="none"/></svg>', color: '#ec4899' },
+            { id: 'other_inc', name: 'Others', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="18" width="36" height="28" rx="2" stroke="#333" stroke-width="3"/><path d="M14 26 H50" stroke="#333" stroke-width="3"/></svg>', color: '#64748b' }
+        ]
+    };
+
+    let data = { txs: [], settings: { currency: '₹', theme: 'auto' } };
+    let editId = null;
+    let selectedId = null;
+    let statsType = 'breakdown'; 
+    let currentCatId = null;
+
+    // --- INIT ---
+    window.onload = () => {
+        const stored = localStorage.getItem(KEY);
+        if (stored) data = JSON.parse(stored);
+        
+        $('set-curr').value = data.settings.currency;
+        $('set-theme').value = data.settings.theme;
+        updateSettings();
+        renderHome();
+    };
+
+    const $ = id => document.getElementById(id);
+    const fmt = amt => `${data.settings.currency}${parseFloat(amt).toFixed(2)}`;
+
+    // --- TOAST ---
+    function showToast(msg, type = 'default') {
+        const t = $('toast');
+        t.innerHTML = msg;
+        t.className = `show ${type}`;
+        setTimeout(() => t.className = t.className.replace('show', '').trim(), 3000);
+    }
+
+    // --- NAV ---
+    function nav(view) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        $(view).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (view === 'v-home') $('nav-home').classList.add('active');
+        if (view === 'v-stats') { $('nav-stats').classList.add('active'); renderStats(); }
+    }
+
+    function openAdd() {
+        editId = null;
+        $('form-title').innerText = 'New Transaction';
+        $('btn-save-text').innerText = 'Save Transaction';
+        $('inp-amt').value = ''; 
+        $('inp-note').value = '';
+        $('inp-date').valueAsDate = new Date();
+        setFormType('expense');
+        nav('v-add');
+    }
+
+    // --- ACTIONS ---
+    function openTxOptions(id) {
+        selectedId = id;
+        const tx = data.txs.find(t => t.id === id);
+        const cat = getCat(tx.cat, tx.type);
+        $('opt-title').innerText = cat.name;
+        $('opt-desc').innerText = `${fmt(tx.amt)} • ${tx.date}`;
+        $('modal-opts').classList.add('open');
+    }
+
+    function closeModal(id) {
+        $(id).classList.remove('open');
+    }
+
+    function triggerEdit() {
+        closeModal('modal-opts');
+        editId = selectedId;
+        const tx = data.txs.find(t => t.id === editId);
+        $('form-title').innerText = 'Edit Transaction';
+        $('btn-save-text').innerText = 'Update Transaction';
+        setFormType(tx.type);
+        currentCatId = tx.cat;
+        renderCategoryGrid(tx.type);
+        
+        $('inp-amt').value = tx.amt;
+        $('inp-date').value = tx.date;
+        $('inp-note').value = tx.note;
+        nav('v-add');
+    }
+
+    function triggerDeleteConfirm() {
+        closeModal('modal-opts');
+        $('modal-confirm').classList.add('open');
+    }
+
+    function performDelete() {
+        if(selectedId === 'ALL') {
+             localStorage.removeItem(KEY);
+             location.reload();
+        } else {
+             data.txs = data.txs.filter(t => t.id !== selectedId);
+             save();
+             renderHome();
+             if($('v-stats').classList.contains('active')) renderStats();
+             showToast('Transaction deleted');
+        }
+        closeModal('modal-confirm');
+    }
+
+    function confirmReset() {
+        selectedId = 'ALL';
+        $('modal-confirm').classList.add('open');
+    }
+
+    // --- LOGIC ---
+    function setFormType(type) {
+        $('btn-type-exp').className = `seg-btn ${type === 'expense' ? 'active exp' : ''}`;
+        $('btn-type-inc').className = `seg-btn ${type === 'income' ? 'active inc' : ''}`;
+        
+        if (!editId) {
+            currentCatId = CATS[type][0].id;
+        }
+        
+        renderCategoryGrid(type);
+    }
+
+    function renderCategoryGrid(type) {
+        const grid = $('cat-grid');
+        grid.innerHTML = '';
+        CATS[type].forEach(c => {
+            const el = document.createElement('div');
+            el.className = `cat-item ${c.id === currentCatId ? 'selected' : ''}`;
+            el.onclick = () => {
+                currentCatId = c.id;
+                renderCategoryGrid(type);
+            };
+            el.innerHTML = `
+                <div class="cat-icon">${c.icon}</div>
+                <div class="cat-name">${c.name}</div>
+            `;
+            grid.appendChild(el);
+        });
+    }
+
+    function saveTx() {
+        const amtVal = $('inp-amt').value;
+        if (!amtVal || parseFloat(amtVal) <= 0) {
+            $('inp-amt').classList.add('shake');
+            showToast('⚠️ Please enter a valid amount', 'error');
+            setTimeout(() => $('inp-amt').classList.remove('shake'), 400);
+            return;
+        }
+        
+        const amt = parseFloat(amtVal);
+        const type = $('btn-type-exp').classList.contains('active') ? 'expense' : 'income';
+        
+        const txObj = {
+            id: editId || Date.now(),
+            amt: amt,
+            type: type,
+            cat: currentCatId,
+            date: $('inp-date').value,
+            note: $('inp-note').value
+        };
+
+        if (editId) {
+            const index = data.txs.findIndex(t => t.id === editId);
+            data.txs[index] = txObj;
+            showToast('Transaction updated', 'success');
+        } else {
+            data.txs.unshift(txObj);
+            showToast('Transaction saved', 'success');
+        }
+        save();
+        nav('v-home');
+        renderHome();
+    }
+
+    function save() {
+        localStorage.setItem(KEY, JSON.stringify(data));
+    }
+
+    function getCat(id, type) {
+        return [...CATS.expense, ...CATS.income].find(c => c.id === id) || { name: 'Unknown', icon: '<svg width="64" height="64" viewBox="0 0 64 64"><text x="32" y="40" text-anchor="middle" font-size="30">?</text></svg>', color: '#ccc' };
+    }
+
+    function setStatsType(type) {
+        statsType = type;
+        renderStats();
+    }
+
+    // --- RENDER ---
+    function renderHome() {
+        let inc = 0, exp = 0;
+        const list = $('tx-list'); list.innerHTML = '';
+        const sorted = data.txs.sort((a,b) => new Date(b.date) - new Date(a.date));
+        const grouped = {};
+        
+        sorted.forEach(tx => {
+            if (tx.type === 'income') inc += tx.amt; else exp += tx.amt;
+            const d = tx.date;
+            if(!grouped[d]) grouped[d] = [];
+            grouped[d].push(tx);
+        });
+
+        $('home-bal').innerText = fmt(inc - exp);
+        $('home-inc').innerText = fmt(inc);
+        $('home-exp').innerText = fmt(exp);
+
+        if (data.txs.length === 0) $('empty-state').style.display = 'block';
+        else $('empty-state').style.display = 'none';
+
+        Object.keys(grouped).forEach(date => {
+            const dObj = new Date(date);
+            const dStr = dObj.toLocaleDateString('en-US', { day: 'numeric', month: 'short', weekday: 'short' });
+            
+            const head = document.createElement('div');
+            head.className = 'tx-date';
+            head.innerText = date === new Date().toISOString().split('T')[0] ? 'Today' : dStr;
+            
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'card tx-group';
+            groupDiv.style.padding = '0'; 
+            
+            grouped[date].forEach(tx => {
+                const cat = getCat(tx.cat, tx.type);
+                const item = document.createElement('div');
+                item.className = 'tx-item';
+                item.onclick = () => openTxOptions(tx.id);
+                
+                item.innerHTML = `
+                    <div class="tx-icon" style="background:${cat.color}20; color:${cat.color}">${cat.icon}</div>
+                    <div class="tx-info">
+                        <div class="tx-title">${cat.name}</div>
+                        <div class="tx-sub">${tx.note || (tx.type==='income'?'Income':'Expense')}</div>
+                    </div>
+                    <div class="tx-amt ${tx.type === 'income' ? 'inc' : 'exp'}">
+                        ${tx.type === 'income' ? '+' : '-'} ${fmt(tx.amt)}
+                    </div>
+                `;
+                groupDiv.appendChild(item);
+            });
+            list.appendChild(head);
+            list.appendChild(groupDiv);
+        });
+    }
+
+    function renderStats() {
+        $('btn-stats-breakdown').className = `seg-btn ${statsType === 'breakdown' ? 'active exp' : ''}`;
+        $('btn-stats-flow').className = `seg-btn ${statsType === 'cashflow' ? 'active inc' : ''}`;
+
+        const legend = $('stats-legend');
+        const list = $('stats-list');
+        const svg = $('donut-chart');
+
+        svg.innerHTML = '';
+        legend.innerHTML = '';
+        list.innerHTML = '';
+
+        if (statsType === 'breakdown') {
+            const expTxs = data.txs.filter(t => t.type === 'expense');
+            const totals = {}; 
+            let total = 0;
+            
+            expTxs.forEach(t => { totals[t.cat] = (totals[t.cat]||0) + t.amt; total += t.amt; });
+
+            if(total === 0) {
+                 svg.innerHTML = '<text x="50" y="50" text-anchor="middle" dy="5" font-size="10" fill="#999">No Data</text>';
+                 return;
+            }
+
+            let offset = 0;
+            Object.keys(totals).sort((a,b) => totals[b] - totals[a]).forEach(catId => {
+                const cat = getCat(catId, 'expense');
+                const val = totals[catId];
+                const rawPct = (val / total) * 100;
+                
+                let pctDisplay;
+                if(rawPct < 0.1) pctDisplay = "<0.1";
+                else if(rawPct < 1) pctDisplay = rawPct.toFixed(1);
+                else pctDisplay = Math.round(rawPct);
+                
+                const pct = val / total;
+                const dash = pct * 100;
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("r", "15.9155"); circle.setAttribute("cx", "50"); circle.setAttribute("cy", "50");
+                circle.setAttribute("fill", "transparent");
+                circle.setAttribute("stroke", cat.color);
+                circle.setAttribute("stroke-width", "8");
+                circle.setAttribute("stroke-dasharray", `${dash} ${100 - dash}`);
+                circle.setAttribute("stroke-dashoffset", -offset);
+                svg.appendChild(circle);
+                offset += dash;
+
+                legend.innerHTML += `
+                    <div style="font-size:12px; display:flex; align-items:center; background:var(--border); padding:4px 8px; border-radius:8px;">
+                        <div style="width:8px; height:8px; background:${cat.color}; border-radius:50%; margin-right:6px;"></div>
+                        <span>${cat.name}</span>
+                        <span style="font-weight:700; margin-left:4px;">${pctDisplay}%</span>
+                    </div>
+                `;
+                list.innerHTML += `
+                    <div class="tx-item" style="border-radius:16px; margin-bottom:8px;">
+                        <div class="tx-icon" style="background:${cat.color}20; color:${cat.color}">${cat.icon}</div>
+                        <div class="tx-info"><div class="tx-title">${cat.name}</div></div>
+                        <div class="tx-amt">${fmt(val)}</div>
+                    </div>
+                `;
+            });
+        } else {
+            let totalInc = 0;
+            let totalExp = 0;
+            data.txs.forEach(t => { if(t.type === 'income') totalInc += t.amt; else totalExp += t.amt; });
+            const total = totalInc + totalExp;
+
+            if(total === 0) {
+                svg.innerHTML = '<text x="50" y="50" text-anchor="middle" dy="5" font-size="10" fill="#999">No Data</text>';
+                return;
+            }
+
+            const segments = [
+                { name: 'Income', val: totalInc, color: 'var(--success)', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="20" stroke="#333" stroke-width="3" fill="#f5f5f5"/><circle cx="32" cy="32" r="12" stroke="#999" stroke-width="2" fill="none"/><rect x="14" y="12" width="2" height="22" fill="#333"/><rect x="12" y="10" width="2" height="6" fill="#333"/><rect x="14" y="10" width="2" height="6" fill="#333"/><rect x="16" y="10" width="2" height="6" fill="#333"/><rect x="18" y="10" width="2" height="6" fill="#333"/><ellipse cx="48" cy="14" rx="4" ry="6" fill="#333"/><rect x="47" y="18" width="2" height="18" fill="#333"/></svg>' },
+                { name: 'Expense', val: totalExp, color: 'var(--danger)', icon: '<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="50" r="3" fill="#333"/><circle cx="44" cy="50" r="3" fill="#333"/><path d="M10 14 H16 L22 40 H46 L52 22 H20" stroke="#333" stroke-width="3" fill="none"/></svg>' }
+            ];
+
+            let offset = 0;
+            segments.forEach(seg => {
+                if(seg.val === 0) return;
+                const pct = seg.val / total;
+                const dash = pct * 100;
+                
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("r", "15.9155"); circle.setAttribute("cx", "50"); circle.setAttribute("cy", "50");
+                circle.setAttribute("fill", "transparent");
+                circle.setAttribute("stroke", seg.color);
+                circle.setAttribute("stroke-width", "8");
+                circle.setAttribute("stroke-dasharray", `${dash} ${100 - dash}`);
+                circle.setAttribute("stroke-dashoffset", -offset);
+                svg.appendChild(circle);
+                offset += dash;
+            });
+
+            const net = totalInc - totalExp;
+            const netColor = net >= 0 ? 'var(--success)' : 'var(--danger)';
+            
+            list.innerHTML = `
+                <div class="tx-item" style="border-radius:16px; margin-bottom:8px;">
+                    <div class="tx-icon" style="background:rgba(16, 185, 129, 0.2); color:var(--success)">${segments[0].icon}</div>
+                    <div class="tx-info"><div class="tx-title">Total Income</div></div>
+                    <div class="tx-amt" style="color:var(--success)">${fmt(totalInc)}</div>
+                </div>
+                <div class="tx-item" style="border-radius:16px; margin-bottom:8px;">
+                    <div class="tx-icon" style="background:rgba(239, 68, 68, 0.2); color:var(--danger)">${segments[1].icon}</div>
+                    <div class="tx-info"><div class="tx-title">Total Expense</div></div>
+                    <div class="tx-amt" style="color:var(--danger)">${fmt(totalExp)}</div>
+                </div>
+                <div class="card" style="text-align:center; padding:20px; background:var(--bg-body); border:none; box-shadow:none; margin-top:20px;">
+                    <div style="font-size:14px; color:var(--text-muted);">Net Savings</div>
+                    <div style="font-size:24px; font-weight:800; color:${netColor}; margin-top:4px;">${fmt(net)}</div>
+                </div>
+            `;
+        }
+    }
+
+    function updateSettings() {
+        data.settings.currency = $('set-curr').value;
+        data.settings.theme = $('set-theme').value;
+        const t = data.settings.theme;
+        if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.body.setAttribute('data-theme', 'dark');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#1c1c1e');
+        } else {
+            document.body.removeAttribute('data-theme');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#4f46e5');
+        }
+        save();
+        renderHome();
+    }
+
+    function exportData() {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:'application/json'}));
+        a.download = `pocketledger_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+    }
+
+    function importData(el) {
+        const r = new FileReader();
+        r.onload = e => { try { data = JSON.parse(e.target.result); save(); location.reload(); } catch(e) { alert('Invalid file'); } };
+        r.readAsText(el.files[0]);
+    }
+</script>
+</body>
+</html>
