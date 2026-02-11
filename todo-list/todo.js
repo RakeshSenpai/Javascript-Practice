@@ -24,9 +24,14 @@ function renderTodo(){
     })
 }
 
+addBtn.addEventListener('click', ()=> {
+    console.log('cliked')
+})
 
 function addTodo(){
 const inputElm = document.querySelector('.js-input')
 const input = input.value
-
+todoList.push({
+    name:name
+})
 }
