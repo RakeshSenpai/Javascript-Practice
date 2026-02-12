@@ -27,6 +27,12 @@ function renderTodo(){
 addBtn.addEventListener('click', ()=> {
     addTodo()
     console.log('cliked')
+    console.log('click')
+    console.log('click')
+    console.log('click')
+    console.log('click')
+    console.log('click')
+    console.log('click')
 })
 
 function addTodo(){
