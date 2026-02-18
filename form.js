@@ -1,7 +1,9 @@
 let todoList = [
     { name: 'Watching Youtube',
-      date: 
     },
+    {
+      name: 'Videos'
+    }
 ]
 
 const container = document.querySelector('.container')
