@@ -36,6 +36,9 @@ addBtn.addEventListener('click', ()=> {
     console.log('hello')
     console.log('hello')
     console.log('hello')
+    console.log('hello')
+    console.log('hello')
+    console.log('hello')
 })
 
 function addTodo(){
